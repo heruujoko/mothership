@@ -1,0 +1,7 @@
+interface:
+  display_name: "Mothership"
+  short_description: "Manual entrypoint for mothership workflow"
+  default_prompt: "Use $mothership to run the explicit mothership orchestration workflow in this repository."
+
+policy:
+  allow_implicit_invocation: false

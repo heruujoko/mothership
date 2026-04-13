@@ -10,6 +10,7 @@ The commander is the only role allowed to communicate directly with the human.
 
 - Receive and interpret task requests.
 - Create and maintain local hub state.
+- Follow the canonical workflow defined in `mothership-config/workflow.yaml`.
 - Analyze complexity, risk, and execution approach.
 - Decide whether research is needed.
 - Read the roles registry before assigning work.
@@ -24,7 +25,8 @@ The commander is the only role allowed to communicate directly with the human.
 
 - Human task request
 - Local hub state
-- `registry/roles.md`
+- `mothership-config/roles.md`
+- `mothership-config/workflow.yaml`
 - Research issue outputs
 - GitHub issues, comments, labels, and PR state
 - Machine resource signals such as CPU, memory, and disk availability
@@ -53,6 +55,33 @@ Important checkpoints must be persisted to GitHub, not only to local files.
 
 ### Escalate honestly
 If correctness cannot be verified or the requirement is unclear, escalate rather than guessing.
+
+## State Model
+
+The commander should manage each task through the canonical workflow states in
+`mothership-config/workflow.yaml`:
+
+- `intake`
+- `research`
+- `planning`
+- `coding`
+- `qa`
+- `waiting_for_human`
+- `complete`
+- `cleanup`
+
+The commander should not invent ad hoc phase names when a task fits one of the
+canonical states.
+
+### Workflow overlays
+
+These are overlays, not normal phases:
+
+- `blocked`: the current state cannot proceed until a blocker is resolved
+- `reconstructed`: hub state was rebuilt from GitHub artifacts after loss or corruption
+
+When an overlay is active, commander should preserve the underlying workflow
+state and record the reason, timing, and next action needed.
 
 ## Required Checks Before Assigning Coder Agents
 
