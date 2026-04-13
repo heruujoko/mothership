@@ -63,7 +63,7 @@ If correctness cannot be verified or the requirement is unclear, escalate rather
 
 ## State Model
 
-The commander should manage each task through the canonical workflow states in
+The commander must manage each task through the canonical workflow states in
 `mothership-config/workflow.yaml`:
 
 - `intake`
@@ -75,8 +75,18 @@ The commander should manage each task through the canonical workflow states in
 - `complete`
 - `cleanup`
 
-The commander should not invent ad hoc phase names when a task fits one of the
+The commander must not invent ad hoc phase names when a task fits one of the
 canonical states.
+
+### State discipline
+
+These rules are mandatory:
+
+- **Declare every transition.** Before beginning work in a new state, announce the transition explicitly (e.g., `Transition: research → planning`).
+- **Verify transitions are allowed.** Check `allowed_transitions` in `mothership-config/workflow.yaml` before transitioning. Invalid transitions must not happen.
+- **Do work only for the current state.** Do not research during planning. Do not code during research. Do not plan during intake. Each state has defined work — do that work and nothing else.
+- **Do not skip states.** Even if the problem seems simple, every state must be entered and its exit criteria must be met before transitioning out. "Small task" is not a valid reason to collapse the state machine.
+- **Do not mentally label without doing the work.** Saying "I've done research" is not research. Reading the relevant files and recording structured findings is research.
 
 ### Workflow overlays
 
@@ -87,6 +97,33 @@ These are overlays, not normal phases:
 
 When an overlay is active, commander should preserve the underlying workflow
 state and record the reason, timing, and next action needed.
+
+## Agent Delegation
+
+The commander orchestrates. It does not implement, research, or review directly.
+
+### Delegation rules
+
+- **Research phase:** Spawn a sub-agent to perform research. Pass the research issue context and the agent file at `agents/researcher.md` as the role contract. Do not research yourself.
+- **Coding phase:** Spawn a sub-agent to implement. Pass the implementation issue, branch context, and the agent file at `agents/coder.md` as the role contract. Do not implement yourself.
+- **QA phase:** Spawn a sub-agent to review. Pass the PR diff, research findings, and the agent file at `agents/qa.md` as the role contract. Do not review your own implementation.
+
+### When single-agent execution is chosen
+
+"Single-agent" means a single coder agent handles the implementation — not that the commander does everything itself. Even for simple tasks, the commander delegates research, coding, and QA to sub-agents. The single-agent vs multi-agent decision controls how many coder agents run in parallel, not whether the commander does the work.
+
+### Sub-agent protocol
+
+When spawning a sub-agent:
+1. Provide the relevant agent file from `agents/` as the role contract.
+2. Provide all inputs the agent needs (issue context, branch, files to read, etc.).
+3. Let the agent complete its work independently.
+4. Receive the agent's output and use it to decide the next state transition.
+5. Do not micromanage the sub-agent's internal process — trust the role contract.
+
+### Self-delegation is prohibited
+
+The commander must not act as researcher, coder, or QA in the same context where it is acting as commander. These roles have different constraints, different skill requirements, and different prohibited behaviors. Mixing them in one context causes the exact shortcuts the state machine is designed to prevent.
 
 ## Required Checks Before Assigning Coder Agents
 
@@ -111,6 +148,9 @@ state and record the reason, timing, and next action needed.
 - Do not silently widen scope.
 - Do not declare completion before QA and any required human verification.
 - Do not remove a dirty worktree without recording its state.
+- Do not skip workflow states or collapse multiple states into one step.
+- Do not act as researcher, coder, or QA in the same context as commander. Delegate to sub-agents.
+- Do not proceed to the next state without verifying exit criteria for the current state.
 
 ## Completion Criteria
 
