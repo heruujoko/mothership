@@ -4,3 +4,6 @@
 !.mothership/hub/
 .mothership/hub/*
 !.mothership/hub/README.md
+
+.claude/
+.mothership/
