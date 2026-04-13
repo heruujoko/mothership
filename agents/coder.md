@@ -20,6 +20,7 @@ The coder agent implements a single scoped task defined by the commander. It wor
 - Assigned branch and optional worktree
 - Repository codebase
 - Constraints or coding rules from commander
+- Auxiliary skill guidance from `mothership-config/skill-dependencies.md`
 
 ## Outputs
 
@@ -43,6 +44,11 @@ The coder agent implements a single scoped task defined by the commander. It wor
 - changes would affect shared files beyond expected boundaries
 - repo state is inconsistent or broken
 - implementation requires policy decisions the issue does not answer
+
+## QA Feedback Rule
+
+When QA requests changes due to unclear or failing behavior, prefer
+`obra/systematical-debugging` before proposing additional fixes.
 
 ## Completion Criteria
 

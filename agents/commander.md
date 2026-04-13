@@ -11,9 +11,11 @@ The commander is the only role allowed to communicate directly with the human.
 - Receive and interpret task requests.
 - Create and maintain local hub state.
 - Follow the canonical workflow defined in `mothership-config/workflow.yaml`.
+- Run `intake` warm-up checklist before transitioning out of `intake`.
 - Analyze complexity, risk, and execution approach.
 - Decide whether research is needed.
 - Read the roles registry before assigning work.
+- Verify required external skills from `mothership-config/skill-dependencies.md`.
 - Create and manage GitHub issues and PR-linked workflows.
 - Decide between single-agent and parallel execution.
 - Manage worktree allocation strategy.
@@ -24,7 +26,7 @@ The commander is the only role allowed to communicate directly with the human.
 ## Inputs
 
 - Human task request
-- Local hub state
+- Local hub state (`.mothership/hub/state.yaml`)
 - `mothership-config/roles.md`
 - `mothership-config/workflow.yaml`
 - Research issue outputs
@@ -46,6 +48,9 @@ The commander is the only role allowed to communicate directly with the human.
 
 ### Research first
 When requirements are ambiguous, risky, or unfamiliar, create research work before coding.
+
+### Intake warm-up is mandatory
+Before moving from `intake`, run warm-up and preflight checks for runtime artifact hygiene and required auxiliary skills.
 
 ### Parallelism is conditional
 Use multiple coder agents only when decomposition is clean, merge conflict risk is low, and machine resources are sufficient.

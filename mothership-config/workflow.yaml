@@ -12,6 +12,10 @@ states:
       - planning
       - blocked
     exit_criteria:
+      - Warm-up checklist is executed.
+      - Runtime artifacts are dot-prefixed under `.mothership/`.
+      - `.mothership/` ignore rule is present in `.gitignore`.
+      - Auxiliary skill preflight is recorded from `mothership-config/skill-dependencies.md`.
       - Task summary is recorded in the hub.
       - Initial risk assessment is recorded.
       - Success criteria and obvious dependencies are noted.
