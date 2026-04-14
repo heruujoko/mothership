@@ -1,0 +1,141 @@
+version: 1
+description: >
+  Canonical commander workflow for mothership v1. This file defines the
+  normal task lifecycle, allowed state transitions, and non-phase overlays
+  used for recovery and interruption handling.
+
+states:
+  intake:
+    purpose: Capture the incoming request and initialize hub state.
+    allowed_transitions:
+      - research
+      - planning
+      - blocked
+    exit_criteria:
+      - Warm-up checklist is executed.
+      - Runtime artifacts are dot-prefixed under `.mothership/`.
+      - `.mothership/` ignore rule is present in `.gitignore`.
+      - Auxiliary skill preflight is recorded from `mothership-config/skill-dependencies.md`.
+      - Task summary is recorded in the hub.
+      - Initial risk assessment is recorded.
+      - Success criteria and obvious dependencies are noted.
+
+  research:
+    purpose: Validate assumptions and gather context before implementation planning.
+    allowed_transitions:
+      - planning
+      - waiting_for_human
+      - blocked
+    exit_criteria:
+      - Research findings are written to GitHub.
+      - Open questions are identified.
+      - Risks and constraints are summarized for planning.
+
+  planning:
+    purpose: Decide execution shape, create implementation scope, and allocate isolation.
+    allowed_transitions:
+      - coding
+      - waiting_for_human
+      - blocked
+    exit_criteria:
+      - Single-agent or multi-agent decision is recorded.
+      - Implementation issues are created or updated.
+      - Worktree allocation decision is recorded.
+
+  coding:
+    purpose: Execute the scoped implementation work in the assigned branch and optional worktree.
+    allowed_transitions:
+      - qa
+      - blocked
+    exit_criteria:
+      - PR exists or implementation checkpoint is recorded.
+      - Relevant implementation notes are written back to GitHub or hub state.
+
+  qa:
+    purpose: Review implementation against issue scope, research findings, and risk profile.
+    allowed_transitions:
+      - coding
+      - waiting_for_human
+      - complete
+      - blocked
+    exit_criteria:
+      - QA disposition is recorded.
+      - Required changes or escalation reason is explicit.
+
+  waiting_for_human:
+    purpose: Pause automation until a required human decision or verification is received.
+    allowed_transitions:
+      - planning
+      - coding
+      - qa
+      - cleanup
+      - blocked
+    exit_criteria:
+      - Human decision or verification is recorded.
+      - Next execution state is chosen explicitly.
+
+  complete:
+    purpose: Mark the task as satisfied before operational cleanup begins.
+    allowed_transitions:
+      - cleanup
+    exit_criteria:
+      - Completion status is posted to GitHub.
+      - Issues and PR references are up to date.
+      - Required QA and human signoff are recorded.
+
+  cleanup:
+    purpose: Clean operational residue and close the orchestration loop safely.
+    allowed_transitions: []
+    exit_criteria:
+      - Worktree state is checked and recorded.
+      - Dirty-state handling is resolved explicitly.
+      - Branch cleanup follows repository policy.
+
+overlays:
+  blocked:
+    purpose: >
+      Indicates progress is paused because the current state cannot continue
+      safely or productively.
+    can_apply_to:
+      - intake
+      - research
+      - planning
+      - coding
+      - qa
+      - waiting_for_human
+      - complete
+      - cleanup
+    required_fields:
+      - blocked_reason
+      - blocked_since
+      - next_unblock_action
+
+  reconstructed:
+    purpose: >
+      Indicates hub state was rebuilt from GitHub artifacts after corruption,
+      loss, or inconsistency.
+    can_apply_to:
+      - intake
+      - research
+      - planning
+      - coding
+      - qa
+      - waiting_for_human
+      - complete
+      - cleanup
+    required_fields:
+      - reconstructed_at
+      - reconstruction_source
+      - reconstruction_notes
+
+hub_contract:
+  required_fields:
+    - current_state
+    - previous_state
+    - state_entered_at
+    - overlays
+  recommended_fields:
+    - blocked_reason
+    - next_unblock_action
+    - reconstructed_at
+    - reconstruction_notes

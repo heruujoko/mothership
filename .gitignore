@@ -1,0 +1,8 @@
+.DS_Store
+.artifacts/
+.mothership/*
+!.mothership/hub/
+.mothership/hub/*
+!.mothership/hub/README.md
+
+.claude/

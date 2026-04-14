@@ -20,10 +20,11 @@ The research agent investigates a task before implementation so the commander ca
 - Known constraints
 - Existing architecture or file references
 - Repository context when available
+- Auxiliary skill guidance from `mothership-config/skill-dependencies.md`
 
 ## Outputs
 
-Research findings should be written back to the GitHub research issue and may also be copied into the local hub.
+Research findings should be written back to the GitHub research issue and may also be copied into `.mothership/hub/`.
 
 Recommended output structure:
 - summary
@@ -40,6 +41,12 @@ Recommended output structure:
 - The research agent does not assign agents.
 - The research agent does not make final workflow decisions.
 - The research agent should not over-design beyond the scope of the issue.
+
+## Skill Usage Guidance
+
+During research, prefer:
+- `obra/superpowers` for broad context gathering and option mapping
+- `obra/creating-plan` for structured recommendation framing
 
 ## Quality Standard
 

@@ -33,6 +33,8 @@ The hub should make it possible for commander to answer:
 - escalations
 - cleanup_status
 - reconstruction_flag
+- warmup_checklist
+- skill_preflight
 
 ## Reliability Rule
 
@@ -45,6 +47,13 @@ If the hub file is incomplete, inconsistent, or corrupted:
 ## Persistence Rule
 
 The hub is for live orchestration, not silent reasoning. Important decisions must also be reflected in GitHub artifacts so the workflow remains auditable.
+
+## Startup Hygiene Rule
+
+Commander should execute a warm-up routine during `intake` that:
+1. creates runtime artifacts under `.mothership/`
+2. enforces `.mothership/` in `.gitignore`
+3. records auxiliary skill preflight status for required external skills
 
 ## Suggested Future Format
 
