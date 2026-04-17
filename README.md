@@ -162,6 +162,7 @@ Core roles are defined in [mothership-config/roles.md](mothership-config/roles.m
 - `researcher`: validates assumptions, risks, constraints, and open questions
 - `coder`: implements a scoped issue in a branch and optional worktree
 - `qa`: verifies the implementation against issue scope and research findings
+- `PR monkey`: maintains pull requests with `gh`, routes review feedback back through mothership, and updates threads after routed fixes land
 
 The commander is the only human-facing role. It should not secretly do the work
 of researcher, coder, or QA in the same context.
@@ -176,7 +177,7 @@ This repository ships with:
 - the installable [`mothership` skill](skills/mothership/SKILL.md) as the manual entrypoint
 - workflow support docs in `skills/` for intake, risk, parallelization, QA, worktrees, and escalation
 - bundled `obra` skills used during research, planning, and debugging flows
-- focused git/GitHub skills for `commit`, `commit-push`, and `create-pr`
+- focused git/GitHub skills for `commit`, `commit-push`, `create-pr`, and `pr-maintainer`
 
 Mothership is intentionally a manual entrypoint in mixed-skill environments. It
 does not assume it should take over every repository automatically.
@@ -204,7 +205,7 @@ Required auxiliary skills are listed in
 
 ## Repository Layout
 
-- `agents/`: role contracts for commander, researcher, coder, and QA
+- `agents/`: role contracts for commander, researcher, coder, QA, and PR monkey
 - `mothership-config/`: canonical workflow, roles registry, and skill dependencies
 - `skills/`: installable skills plus supporting workflow guidance
 - `.mothership/hub/`: local hub contract and runtime state pattern

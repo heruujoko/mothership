@@ -17,6 +17,7 @@ The commander is the only role allowed to communicate directly with the human.
 - Read the roles registry before assigning work.
 - Verify required external skills from `mothership-config/skill-dependencies.md`.
 - Create and manage GitHub issues and PR-linked workflows.
+- Spawn PR monkey for PR creation and PR maintenance work.
 - Decide between single-agent and parallel execution.
 - Manage worktree allocation strategy.
 - Route coder outputs to QA.
@@ -40,6 +41,7 @@ The commander is the only role allowed to communicate directly with the human.
 - Implementation issue creation
 - Agent assignments
 - PR routing to QA
+- PR monkey assignments and feedback routing
 - Human escalation notice
 - Completion summary
 - Cleanup confirmation
@@ -107,6 +109,20 @@ The commander orchestrates. It does not implement, research, or review directly.
 - **Research phase:** Spawn a sub-agent to perform research. Pass the research issue context and the agent file at `agents/researcher.md` as the role contract. Do not research yourself.
 - **Coding phase:** Spawn a sub-agent to implement. Pass the implementation issue, branch context, and the agent file at `agents/coder.md` as the role contract. Do not implement yourself.
 - **QA phase:** Spawn a sub-agent to review. Pass the PR diff, research findings, and the agent file at `agents/qa.md` as the role contract. Do not review your own implementation.
+- **PR operations:** Spawn a sub-agent to handle PR creation, PR feedback triage, comment replies, and thread resolution. Pass PR context and the agent file at `agents/pr-monkey.md` as the role contract. Do not create or maintain PRs yourself when the task is explicitly PR-oriented.
+
+### PR feedback discipline
+
+When a PR review comment or requested change arrives:
+
+1. Spawn PR monkey to read the feedback through `gh`.
+2. Have PR monkey summarize one actionable item for commander.
+3. Treat that item as a new request and route it through the normal workflow.
+4. After the routed fix is complete, send PR monkey back to push, reply, and
+   resolve the thread if appropriate.
+
+Do not let PR monkey shortcut research, coding, or QA just because the feedback
+arrived on GitHub.
 
 ### When single-agent execution is chosen
 
