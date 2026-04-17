@@ -1,0 +1,4 @@
+interface:
+  display_name: "Create PR"
+  short_description: "Open a pull request with a structured description"
+  default_prompt: "Use $create-pr to inspect the current branch diff, draft a concise pull request title and Markdown body, and open a draft PR."

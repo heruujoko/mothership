@@ -7,7 +7,8 @@ other repositories.
 
 - `agents/`: role contracts for commander, researcher, coder, and QA
 - `mothership-config/`: shared role and workflow definitions
-- `skills/`: supporting workflow docs plus the installable `mothership` skill entrypoint
+- `skills/`: supporting workflow docs plus installable skills for `mothership`,
+  `commit`, `commit-push`, and `create-pr`
 - `.mothership/hub/`: local hub state contract, checkpoints, and runtime state
 - `.mothership/` (runtime, ignored): warm-up artifacts and skill preflight reports
 

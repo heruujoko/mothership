@@ -23,6 +23,9 @@ This repository is an installable mothership package for Codex agents and skills
 
 ## Supporting Skills
 
+- `skills/commit/SKILL.md`
+- `skills/commit-push/SKILL.md`
+- `skills/create-pr/SKILL.md`
 - `skills/task-intake-and-decomposition.md`
 - `skills/risk-assessment.md`
 - `skills/research-execution.md`
