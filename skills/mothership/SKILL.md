@@ -41,6 +41,7 @@ When this skill is invoked, use the local package artifacts in this order:
    - `research-execution.md`
    - `parallelization-decision.md`
    - `github-issue-management.md`
+   - `pr-maintainer/SKILL.md`
    - `worktree-management.md`
    - `qa-review-loop.md`
    - `human-escalation.md`
@@ -117,6 +118,24 @@ This separation is necessary because:
 - Sub-agents provide natural isolation — if a sub-agent encounters a blocker, it reports back cleanly rather than contaminating the commander's decision context.
 
 The single-agent vs multi-agent decision in `planning` controls how many coder sub-agents run in parallel — not whether the commander does the work itself.
+
+### PR work uses PR monkey
+
+When the user provides a PR, asks to create a PR from the current project, or
+asks to process PR review feedback, commander should spawn `agents/pr-monkey.md`
+for the PR-facing work.
+
+PR monkey is responsible for:
+
+- making sure `gh` is installed and authenticated before PR work proceeds
+- creating PRs with full descriptions
+- reading PR feedback one item at a time
+- returning each actionable item to commander as new scoped work
+- pushing follow-up fixes, replying to comments, and resolving threads after the
+  routed fix is complete
+
+PR monkey must never implement feedback directly outside the main workflow and
+must never merge without explicit human consent.
 
 ### State machine violations to avoid
 

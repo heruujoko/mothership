@@ -1,0 +1,4 @@
+interface:
+  display_name: "Commit Push"
+  short_description: "Commit changes and push the current branch"
+  default_prompt: "Use $commit-push to inspect the scoped changes, create a focused commit, and push the current branch without opening a pull request."

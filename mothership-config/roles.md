@@ -37,6 +37,12 @@ New roles should be added here before they are introduced into the workflow.
 **Primary outputs:** approval, requested changes, escalation recommendation, review summary.  
 **Key constraints:** Must not approve ambiguous or unverifiable changes; must escalate clearly when human judgment is required.
 
+### PR Monkey
+**Purpose:** Maintain pull requests through the GitHub CLI, including PR creation, feedback triage, reply posting, and thread resolution after commander-routed fixes land.  
+**Invoked when:** Commander receives a PR to maintain, a request to create a PR from the current project, or a request to process PR review feedback.  
+**Primary outputs:** PR URL and description, structured feedback items for commander, reply and resolution updates, push confirmations, blockers related to `gh` or PR state.  
+**Key constraints:** Must use `gh`, must work feedback one item at a time, must route actionable feedback back through commander, and must never merge without explicit human consent.
+
 ## Future Candidate Roles
 
 ### Designer

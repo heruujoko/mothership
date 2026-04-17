@@ -1,0 +1,4 @@
+interface:
+  display_name: "PR Maintainer"
+  short_description: "Maintain a PR with GitHub CLI and workflow discipline"
+  default_prompt: "Use $pr-maintainer to create or maintain a pull request with gh, route each review comment back through mothership one at a time, and update the PR until it is ready for human-approved merge."
