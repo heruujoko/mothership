@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/charmbracelet/huh"
 )
@@ -126,6 +127,10 @@ func isInteractive() bool {
 }
 
 func install(cfg config) error {
+	if err := validateRepoRoot(cfg.RepoRoot); err != nil {
+		return err
+	}
+
 	targetRoot := targetRootFor(cfg.Target)
 	if err := os.MkdirAll(targetRoot, 0o755); err != nil {
 		return fmt.Errorf("create target root: %w", err)
@@ -163,6 +168,55 @@ func install(cfg config) error {
 	fmt.Printf("  agents: %s\n", filepath.Join(targetRoot, "agents"))
 	fmt.Printf("  mothership-config: %s\n", filepath.Join(targetRoot, "mothership-config"))
 	fmt.Printf("  hub contract: %s\n", hubReadme)
+
+	return nil
+}
+
+func validateRepoRoot(repoRoot string) error {
+	requiredPaths := []struct {
+		relPath string
+		wantDir bool
+	}{
+		{relPath: "skills", wantDir: true},
+		{relPath: "agents", wantDir: true},
+		{relPath: "mothership-config", wantDir: true},
+		{relPath: filepath.Join(".mothership", "hub", "README.md"), wantDir: false},
+	}
+
+	var missing []string
+	var invalidType []string
+	for _, requiredPath := range requiredPaths {
+		fullPath := filepath.Join(repoRoot, requiredPath.relPath)
+		info, err := os.Stat(fullPath)
+		if err != nil {
+			if os.IsNotExist(err) {
+				missing = append(missing, fmt.Sprintf("%s (%s)", requiredPath.relPath, fullPath))
+				continue
+			}
+			return fmt.Errorf("preflight validate repo root %q: inspect %s: %w", repoRoot, fullPath, err)
+		}
+
+		if requiredPath.wantDir && !info.IsDir() {
+			invalidType = append(invalidType, fmt.Sprintf("%s (%s): must be a directory", requiredPath.relPath, fullPath))
+			continue
+		}
+
+		if !requiredPath.wantDir && info.IsDir() {
+			invalidType = append(invalidType, fmt.Sprintf("%s (%s): must be a file", requiredPath.relPath, fullPath))
+		}
+	}
+
+	var problems []string
+	if len(missing) > 0 {
+		problems = append(problems, "missing required paths: "+strings.Join(missing, ", "))
+	}
+	if len(invalidType) > 0 {
+		problems = append(problems, "wrong path types: "+strings.Join(invalidType, ", "))
+	}
+
+	if len(problems) > 0 {
+		return fmt.Errorf("preflight validate repo root %q failed; %s", repoRoot, strings.Join(problems, "; "))
+	}
 
 	return nil
 }
