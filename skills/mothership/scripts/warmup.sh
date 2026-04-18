@@ -9,6 +9,8 @@ hub_checkpoints_dir="${hub_dir}/checkpoints"
 report_file="${preflight_dir}/skills-status.md"
 dependencies_file="${repo_root}/mothership-config/skill-dependencies.md"
 gitignore_file="${repo_root}/.gitignore"
+registry_file="${repo_root}/agents/registry.yaml"
+subagent_protocol_file="${repo_root}/skills/mothership/subagent-protocol.md"
 
 mkdir -p "${runtime_dir}" "${preflight_dir}" "${runtime_dir}/sessions" "${hub_checkpoints_dir}"
 
@@ -28,10 +30,12 @@ required_skills=(
   "obra/systematical-debugging"
 )
 
-codex_home="${CODEX_HOME:-${HOME}/.codex}"
 search_roots=(
   "${repo_root}/skills"
-  "${codex_home}/skills"
+  "${MOTHERSHIP_SKILLS_HOME:-}"
+  "${CODEX_HOME:-${HOME}/.codex}/skills"
+  "${HOME}/.claude/skills"
+  "${HOME}/.antigravity/skills"
 )
 
 {
@@ -62,7 +66,26 @@ for skill in "${required_skills[@]}"; do
   fi
 done
 
+missing_contract_count=0
+if [ ! -f "${registry_file}" ]; then
+  missing_contract_count=$((missing_contract_count + 1))
+fi
+if [ ! -f "${subagent_protocol_file}" ]; then
+  missing_contract_count=$((missing_contract_count + 1))
+fi
+
 {
+  echo
+  echo "## Host Delegation Files"
+  echo "- agent_registry_present: $([ -f "${registry_file}" ] && echo "yes" || echo "no")"
+  echo "- subagent_protocol_present: $([ -f "${subagent_protocol_file}" ] && echo "yes" || echo "no")"
+  echo
+  echo "## Search Roots"
+  for root in "${search_roots[@]}"; do
+    if [ -n "${root}" ]; then
+      echo "- \`${root}\`"
+    fi
+  done
   echo
   echo "## Runtime Hygiene"
   echo "- runtime_dir: \`${runtime_dir}\`"
@@ -70,8 +93,10 @@ done
   echo "- dependencies_file_present: $([ -f "${dependencies_file}" ] && echo "yes" || echo "no")"
 } >> "${report_file}"
 
-if [ "${missing_count}" -gt 0 ]; then
-  echo "warmup: completed with missing skills (${missing_count}). see ${report_file}" >&2
+total_missing=$((missing_count + missing_contract_count))
+
+if [ "${total_missing}" -gt 0 ]; then
+  echo "warmup: completed with missing dependencies (${total_missing}). see ${report_file}" >&2
   exit 2
 fi
 
