@@ -182,6 +182,49 @@ This repository ships with:
 Mothership is intentionally a manual entrypoint in mixed-skill environments. It
 does not assume it should take over every repository automatically.
 
+## Installation
+
+Run the installer from the repository root:
+
+```bash
+./install.sh
+```
+
+The root script is a wrapper around the Go installer in `tools/installer/`.
+It requires a local `go` toolchain.
+
+The script asks two questions:
+
+1. install target: `codex`, `claude`, or `antigravity`
+2. install mode: `symlink` or `copy`
+
+Installed package contents:
+
+- `skills/`
+- `agents/`
+- `mothership-config/`
+- `.mothership/hub/README.md`
+
+Target roots:
+
+- `codex` -> `${CODEX_HOME:-~/.codex}`
+- `claude` -> `~/.claude`
+- `antigravity` -> `~/.antigravity`
+
+Why the hub contract is copied instead of symlinked:
+
+- `.mothership/` is used for local runtime artifacts.
+- copying `.mothership/hub/README.md` keeps the contract available without
+  writing runtime state back into this repository.
+
+Non-interactive examples:
+
+```bash
+./install.sh --target claude --mode symlink
+./install.sh --target codex --mode copy
+./install.sh --target antigravity --mode symlink --force
+```
+
 ## Using It
 
 Invoke the `mothership` skill when you want the orchestration workflow itself,
