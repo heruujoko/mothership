@@ -32,11 +32,18 @@ required_skills=(
 
 search_roots=(
   "${repo_root}/skills"
-  "${MOTHERSHIP_SKILLS_HOME:-}"
   "${CODEX_HOME:-${HOME}/.codex}/skills"
   "${HOME}/.claude/skills"
   "${HOME}/.antigravity/skills"
 )
+
+if [ -n "${MOTHERSHIP_SKILLS_HOME:-}" ]; then
+  search_roots=(
+    "${search_roots[@]:0:1}"
+    "${MOTHERSHIP_SKILLS_HOME}"
+    "${search_roots[@]:1}"
+  )
+fi
 
 {
   echo "# Mothership Skill Preflight"
