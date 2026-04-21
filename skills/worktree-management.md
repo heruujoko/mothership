@@ -24,3 +24,14 @@ Before deleting a worktree:
 - confirm issue and PR state are recorded
 
 Never silently remove a dirty worktree.
+
+## Post-Merge Cleanup
+
+After a PR is merged:
+
+1. Return to the main branch.
+2. Pull latest changes.
+3. Remove the worktree if it was temporary.
+4. Confirm repo state is clean.
+
+For the full post-merge reset sequence including next-task preparation, see `agents/commander.md` section "Post-Merge Reset".

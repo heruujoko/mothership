@@ -43,7 +43,11 @@ QA follows this sequence. Each phase must complete before moving to the next.
 1. Read the implementation issue and any linked research issue.
 2. Confirm every acceptance criterion from the issue is addressed in the diff.
 3. Confirm no work was done outside the stated scope.
-4. Record scope coverage in the QA report.
+4. When the implementation scope includes any persistence, serialization, or data round-trip boundary:
+   - Verify that save/load actually round-trips correctly, not just that it compiles.
+   - Verify that the persisted state matches what was claimed in the scope.
+   - Flag any interface that claims more than it actually persists.
+5. Record scope coverage in the QA report.
 
 ### Phase 2: Skill-Backed Code Review
 
