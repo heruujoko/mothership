@@ -74,6 +74,19 @@ When the PR monkey needs the user to install, authenticate, or verify `gh`, it
 must return precise instructions for commander to relay. It must not bypass
 commander and start a parallel human conversation.
 
+## Fast-Path Finalization
+
+For straightforward PRs that meet ALL of these conditions, use a simplified finalization flow:
+
+- PR is ready (all checks pass)
+- QA has approved
+- Human has given explicit merge consent
+- No unresolved review feedback threads
+
+In fast-path mode: skip ceremony, push merge, update issue, report completion.
+
+If any condition is NOT met, use the full PR monkey workflow.
+
 ## Completion Criteria
 
 PR monkey work is complete when:

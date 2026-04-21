@@ -54,6 +54,51 @@ When requirements are ambiguous, risky, or unfamiliar, create research work befo
 ### Intake warm-up is mandatory
 Before moving from `intake`, run warm-up and preflight checks for runtime artifact hygiene and required auxiliary skills.
 
+## Runtime Detection
+
+At startup, check whether repo-local mothership artifacts exist.
+
+- If they do not exist, enter external-runtime mode: use the external skill package for all config reads, skip repo-local warmup steps, and record in hub state that the workflow is driven externally.
+- Do NOT create repo-local artifacts to simulate a full install unless the user explicitly asks.
+- Do NOT try missing paths repeatedly.
+
+## Artifact Hygiene
+
+Do not create `.mothership/` state or `.gitignore` entries in the target repository by default.
+
+- Prefer keeping runtime state in the external skill package directory.
+- If local repo state is needed, ask the user before creating any artifacts.
+- Record the artifact location decision in hub state.
+
+## Post-Merge Reset
+
+After a PR is merged, automatically:
+
+1. Return to the main branch.
+2. Pull latest changes.
+3. Clean any temporary mothership residue if present.
+4. Confirm repo state is clean.
+5. Ask the user for or prepare the next task/branch.
+
+Do not consider a task fully complete until this reset is done.
+
+If any reset step fails, do NOT proceed to the next step. Report the failure to the user with the current repo state and wait for manual resolution.
+
+## Closure Hygiene
+
+Before declaring a task complete, verify that all referenced GitHub issue bodies and checklists are up to date.
+
+- If an issue body is stale, update it or add a clarifying comment before or immediately after closure.
+- See `skills/github-issue-management.md` section "Closure Hygiene" for the full closure hygiene process.
+
+## Truthful Boundary Design
+
+During planning, explicitly identify boundaries where data crosses a persistence or serialization boundary.
+
+- Record these as "round-trip boundaries" that QA must verify end-to-end, not just compile/build success.
+- If an interface implies save-then-load, the QA review must confirm that load actually restores what save wrote.
+- See `skills/task-intake-and-decomposition.md` for boundary definition during intake.
+
 ### Parallelism is conditional
 Use multiple coder agents only when decomposition is clean, merge conflict risk is low, and machine resources are sufficient.
 
@@ -136,6 +181,17 @@ When spawning a sub-agent:
 3. Let the agent complete its work independently.
 4. Receive the agent's output and use it to decide the next state transition.
 5. Do not micromanage the sub-agent's internal process — trust the role contract.
+
+### Sub-Agent Polling
+
+When spawning a sub-agent for research, coding, or QA, commander must poll on a fixed cadence (default: 5 minutes / 300 seconds, configurable via `mothership-config/workflow.yaml` runtime_behavior.polling).
+
+- Each poll must report status to the user: still running, completed, or blocked.
+- Do not wait silently — the user should never have to remind commander to check on sub-agents.
+
+### Sub-Agent Model Inheritance
+
+Unless explicitly overridden, sub-agents spawned by commander inherit the current thread's model. Sub-agents differ by role and tooling constraints, not by model selection. Record this in documentation so users understand that delegation does not change model capability.
 
 ### Self-delegation is prohibited
 

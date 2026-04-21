@@ -13,8 +13,8 @@ states:
       - blocked
     exit_criteria:
       - Warm-up checklist is executed.
-      - "Runtime artifacts are dot-prefixed under `.mothership/`."
-      - "`.mothership/` ignore rule is present in `.gitignore`."
+      - "Runtime artifacts are located per `runtime_behavior.artifact_location` setting."
+      - "If artifacts are repo-local, `.mothership/` ignore rule is present in `.gitignore`."
       - "Auxiliary skill preflight is recorded from `mothership-config/skill-dependencies.md`."
       - Task summary is recorded in the hub.
       - Initial risk assessment is recorded.
@@ -96,6 +96,9 @@ states:
       - Worktree state is checked and recorded.
       - Dirty-state handling is resolved explicitly.
       - Branch cleanup follows repository policy.
+      - Repository is returned to main branch with latest pulled.
+      - Temporary mothership residue is cleaned if present.
+      - Repo state is confirmed clean before session ends.
 
 overlays:
   blocked:
@@ -133,6 +136,30 @@ overlays:
       - reconstructed_at
       - reconstruction_source
       - reconstruction_notes
+
+runtime_behavior:
+  polling:
+    enabled: true
+    default_cadence_seconds: 300
+    description: >
+      When commander spawns a sub-agent and is waiting for results, it must
+      poll on a fixed cadence and proactively report status to the user.
+      Reports should indicate: still running, completed, or blocked.
+  artifact_location:
+    default: external
+    description: >
+      Runtime artifacts (.mothership/ state, gitignore entries) should NOT be
+      created in the target repository by default. Prefer keeping mothership
+      state in the external skill package directory. If local repo state is
+      required, commander must ask the user first before creating any artifacts.
+  missing_runtime:
+    behavior: external_runtime
+    description: >
+      When repo-local mothership artifacts (skills/mothership/, mothership-config/,
+      .mothership/) do not exist, do NOT try to create them or simulate a full
+      install. Instead, enter external-runtime mode immediately: use the external
+      skill package for config, skip repo-local warmup steps, and record in hub
+      state that the workflow is driven externally.
 
 hub_contract:
   required_fields:

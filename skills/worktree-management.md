@@ -24,3 +24,9 @@ Before deleting a worktree:
 - confirm issue and PR state are recorded
 
 Never silently remove a dirty worktree.
+
+## Post-Merge Cleanup
+
+After a PR is merged, follow the full **Post-Merge Reset** sequence defined in `agents/commander.md`.
+
+> Do not consider worktree cleanup complete until the reset sequence finishes.
