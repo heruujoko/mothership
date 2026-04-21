@@ -1,0 +1,54 @@
+version: 1
+description: >
+  Host-specific delegation registry for mothership roles. Role contracts remain
+  in `agents/*.md`. This file tells a host runtime which sub-agent tool flavor
+  to use for each delegated role.
+
+roles:
+  commander:
+    delegated: false
+    contract_file: agents/commander.md
+
+  researcher:
+    delegated: true
+    contract_file: agents/researcher.md
+    claude:
+      tool: Agent
+      subagent_type: Explore
+      description_template: "Research {{task_summary_short}}"
+    codex:
+      tool: spawn_agent
+      agent_type: explorer
+
+  coder:
+    delegated: true
+    contract_file: agents/coder.md
+    claude:
+      tool: Agent
+      subagent_type: general-purpose
+      description_template: "Implement {{task_summary_short}}"
+    codex:
+      tool: spawn_agent
+      agent_type: worker
+
+  qa:
+    delegated: true
+    contract_file: agents/qa.md
+    claude:
+      tool: Agent
+      subagent_type: feature-dev:code-reviewer
+      description_template: "Review {{task_summary_short}}"
+    codex:
+      tool: spawn_agent
+      agent_type: explorer
+
+  pr_monkey:
+    delegated: true
+    contract_file: agents/pr-monkey.md
+    claude:
+      tool: Agent
+      subagent_type: general-purpose
+      description_template: "Maintain PR {{task_summary_short}}"
+    codex:
+      tool: spawn_agent
+      agent_type: default

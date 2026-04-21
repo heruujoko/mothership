@@ -13,9 +13,9 @@ states:
       - blocked
     exit_criteria:
       - Warm-up checklist is executed.
-      - Runtime artifacts are located per `runtime_behavior.artifact_location` setting.
-      - If artifacts are repo-local, `.mothership/` ignore rule is present in `.gitignore`.
-      - Auxiliary skill preflight is recorded from `mothership-config/skill-dependencies.md`.
+      - "Runtime artifacts are located per `runtime_behavior.artifact_location` setting."
+      - "If artifacts are repo-local, `.mothership/` ignore rule is present in `.gitignore`."
+      - "Auxiliary skill preflight is recorded from `mothership-config/skill-dependencies.md`."
       - Task summary is recorded in the hub.
       - Initial risk assessment is recorded.
       - Success criteria and obvious dependencies are noted.
@@ -27,6 +27,8 @@ states:
       - waiting_for_human
       - blocked
     exit_criteria:
+      - "Research sub-agent is invoked using `agents/registry.yaml`."
+      - Research sub-agent output or blocker is recorded.
       - Research findings are written to GitHub.
       - Open questions are identified.
       - Risks and constraints are summarized for planning.
@@ -48,6 +50,8 @@ states:
       - qa
       - blocked
     exit_criteria:
+      - "Coder sub-agent is invoked using `agents/registry.yaml`."
+      - Coder sub-agent output or blocker is recorded.
       - PR exists or implementation checkpoint is recorded.
       - Relevant implementation notes are written back to GitHub or hub state.
 
@@ -59,6 +63,8 @@ states:
       - complete
       - blocked
     exit_criteria:
+      - "QA sub-agent is invoked using `agents/registry.yaml`."
+      - QA sub-agent output or blocker is recorded.
       - QA disposition is recorded.
       - Required changes or escalation reason is explicit.
 

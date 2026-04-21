@@ -158,6 +158,10 @@ automation keeps moving after it should have stopped and asked for judgment.
 
 Core roles are defined in [mothership-config/roles.md](mothership-config/roles.md).
 
+Host-specific sub-agent mappings are defined in
+[agents/registry.yaml](agents/registry.yaml), and the delegation contract is in
+[skills/mothership/subagent-protocol.md](skills/mothership/subagent-protocol.md).
+
 - `commander`: owns workflow, state transitions, GitHub coordination, and human communication
 - `researcher`: validates assumptions, risks, constraints, and open questions
 - `coder`: implements a scoped issue in a branch and optional worktree
@@ -169,6 +173,13 @@ of researcher, coder, or QA in the same context.
 
 That separation is deliberate. It reduces hidden shortcuts and makes each phase
 of work easier to inspect.
+
+Mothership now makes that separation host-explicit:
+
+- Claude should use the `Agent` tool family with the mapped `subagent_type`
+- Codex should use `spawn_agent` with the mapped `agent_type`
+- the role contract in `agents/*.md` is always part of the delegated prompt
+- commander must not perform ad hoc QA after a coder returns
 
 ## Included Skills
 
@@ -182,6 +193,49 @@ This repository ships with:
 Mothership is intentionally a manual entrypoint in mixed-skill environments. It
 does not assume it should take over every repository automatically.
 
+## Installation
+
+Run the installer from the repository root:
+
+```bash
+./install.sh
+```
+
+The root script is a wrapper around the Go installer in `tools/installer/`.
+It requires a local `go` toolchain.
+
+The script asks two questions:
+
+1. install target: `codex`, `claude`, or `antigravity`
+2. install mode: `symlink` or `copy`
+
+Installed package contents:
+
+- `skills/`
+- `agents/`
+- `mothership-config/`
+- `.mothership/hub/README.md`
+
+Target roots:
+
+- `codex` -> `${CODEX_HOME:-~/.codex}`
+- `claude` -> `~/.claude`
+- `antigravity` -> `~/.antigravity`
+
+Why the hub contract is copied instead of symlinked:
+
+- `.mothership/` is used for local runtime artifacts.
+- copying `.mothership/hub/README.md` keeps the contract available without
+  writing runtime state back into this repository.
+
+Non-interactive examples:
+
+```bash
+./install.sh --target claude --mode symlink
+./install.sh --target codex --mode copy
+./install.sh --target antigravity --mode symlink --force
+```
+
 ## Using It
 
 Invoke the `mothership` skill when you want the orchestration workflow itself,
@@ -194,7 +248,9 @@ High-level flow:
 3. Read the canonical config:
    - `mothership-config/workflow.yaml`
    - `mothership-config/roles.md`
+   - `agents/registry.yaml`
    - `mothership-config/skill-dependencies.md`
+   - `skills/mothership/subagent-protocol.md`
 4. Record the task in the local hub.
 5. Move through the workflow state machine explicitly.
 6. Persist meaningful checkpoints to GitHub.
@@ -206,6 +262,7 @@ Required auxiliary skills are listed in
 ## Repository Layout
 
 - `agents/`: role contracts for commander, researcher, coder, QA, and PR monkey
+- `agents/registry.yaml`: host-specific mapping from mothership roles to the sub-agent tool flavor
 - `mothership-config/`: canonical workflow, roles registry, and skill dependencies
 - `skills/`: installable skills plus supporting workflow guidance
 - `.mothership/hub/`: local hub contract and runtime state pattern

@@ -22,7 +22,8 @@ Run this checklist immediately when `mothership` is invoked:
 2. Ensure runtime artifacts are dot-prefixed under `.mothership/`.
 3. Ensure `.mothership/` is present in `.gitignore`.
 4. Ensure required auxiliary skills are available per `mothership-config/skill-dependencies.md`.
-5. If preflight fails, record a `blocked` overlay or explicit fallback notes before continuing.
+5. Ensure `agents/registry.yaml` and `skills/mothership/subagent-protocol.md` are available.
+6. If preflight fails, record a `blocked` overlay or explicit fallback notes before continuing.
 
 ## Purpose
 
@@ -33,9 +34,11 @@ When this skill is invoked, use the local package artifacts in this order:
 
 1. Read `mothership-config/roles.md` for the available role contracts.
 2. Read `mothership-config/workflow.yaml` for the canonical workflow states and transitions.
-3. Read `.mothership/hub/README.md` for the local hub state contract.
-4. Read `mothership-config/skill-dependencies.md` for required external skills.
-5. Read the supporting workflow docs in `skills/` as needed:
+3. Read `agents/registry.yaml` for host-specific sub-agent mappings.
+4. Read `skills/mothership/subagent-protocol.md` for the host-aware delegation contract.
+5. Read `.mothership/hub/README.md` for the local hub state contract.
+6. Read `mothership-config/skill-dependencies.md` for required external skills.
+7. Read the supporting workflow docs in `skills/` as needed:
    - `task-intake-and-decomposition.md`
    - `risk-assessment.md`
    - `research-execution.md`
@@ -45,7 +48,7 @@ When this skill is invoked, use the local package artifacts in this order:
    - `worktree-management.md`
    - `qa-review-loop.md`
    - `human-escalation.md`
-6. Apply the role docs in `agents/` when acting within a specific mothership role.
+8. Apply the role docs in `agents/` when acting within a specific mothership role.
 
 ## Activation Rule
 
@@ -110,7 +113,7 @@ Do not skip from "I understand the task" to "here is the solution." The state ma
 
 ### Use sub-agents, not role-play
 
-When the workflow enters a phase that corresponds to a non-commander role (research, coding, QA), the commander must spawn a sub-agent using the Agent tool with the appropriate role contract from `agents/`. It must not perform that role's work itself in the same context.
+When the workflow enters a phase that corresponds to a non-commander role (research, coding, QA), the commander must spawn a sub-agent using the host mapping from `agents/registry.yaml` and the role contract from `agents/`. It must not perform that role's work itself in the same context.
 
 This separation is necessary because:
 - Each role has different constraints and prohibited behaviors.
@@ -119,11 +122,48 @@ This separation is necessary because:
 
 The single-agent vs multi-agent decision in `planning` controls how many coder sub-agents run in parallel — not whether the commander does the work itself.
 
+### Host-aware sub-agent protocol
+
+Use `skills/mothership/subagent-protocol.md` as the execution contract for all
+delegation.
+
+Required delegation behavior:
+
+1. Identify the active workflow state.
+2. Map the state to a role using `agents/registry.yaml`.
+3. Use the host-specific sub-agent tool declared for that role.
+4. Build the prompt from the full role contract plus task-specific context.
+5. Wait for the delegated result before doing work that belongs to that role.
+6. Record the output and only then decide the next transition.
+
+For Claude:
+
+- Use the `Agent` tool family and the `subagent_type` declared in `agents/registry.yaml`.
+- `researcher` must use `Explore`.
+- `coder` must use `general-purpose`.
+- `qa` must use `feature-dev:code-reviewer`.
+
+For Codex:
+
+- Use `spawn_agent` and the `agent_type` declared in `agents/registry.yaml`.
+- `researcher` should use `explorer`.
+- `coder` should use `worker`.
+- `qa` should use `explorer`.
+
+The commander may gather minimal routing context in `intake` and `planning`.
+After delegation starts, it must not continue the delegated work itself.
+
+Examples of prohibited drift:
+
+- "Let me verify the results independently before marking QA complete."
+- "I'll quickly inspect the changed files myself instead of spawning QA."
+- "The coder already succeeded, so I can close the loop without review."
+
 ### PR work uses PR monkey
 
 When the user provides a PR, asks to create a PR from the current project, or
 asks to process PR review feedback, commander should spawn `agents/pr-monkey.md`
-for the PR-facing work.
+for the PR-facing work using the host mapping from `agents/registry.yaml`.
 
 PR monkey is responsible for:
 
