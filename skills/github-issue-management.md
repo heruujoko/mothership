@@ -46,6 +46,15 @@ Before closing an issue (via `Closes #...` in a PR or manually):
 
 All GitHub comments and updates must use proper Markdown formatting with headings, bullets, and sections. Never use literal `\n` escape sequences — use actual line breaks and Markdown structure.
 
+## Template Usage
+
+| Template | Use during workflow state |
+|----------|--------------------------|
+| Research Update | research → planning |
+| Planning Update | planning → coding |
+| QA Findings | qa → complete |
+| Completion Summary | coding → review (or final) |
+
 ## Update Templates
 
 ### Research Update

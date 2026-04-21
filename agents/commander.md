@@ -82,6 +82,8 @@ After a PR is merged, automatically:
 
 Do not consider a task fully complete until this reset is done.
 
+If any reset step fails, do NOT proceed to the next step. Report the failure to the user with the current repo state and wait for manual resolution.
+
 ## Closure Hygiene
 
 Before declaring a task complete, verify that all referenced GitHub issue bodies and checklists are up to date.
