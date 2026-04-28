@@ -51,7 +51,7 @@ func parseFlags(args []string) (config, error) {
 	fs.SetOutput(io.Discard)
 
 	fs.StringVar(&cfg.RepoRoot, "repo-root", "", "repository root")
-	fs.StringVar(&cfg.Target, "target", "", "install target: codex, claude, antigravity")
+	fs.StringVar(&cfg.Target, "target", "", "install target: codex, claude, antigravity, opencode")
 	fs.StringVar(&cfg.Mode, "mode", "", "install mode: symlink, copy")
 	fs.BoolVar(&cfg.Force, "force", false, "replace existing paths")
 
@@ -71,7 +71,7 @@ func parseFlags(args []string) (config, error) {
 }
 
 func usageErr(err error) error {
-	return fmt.Errorf("%w\n\nUsage: ./install.sh [--target codex|claude|antigravity] [--mode symlink|copy] [--force]", err)
+	return fmt.Errorf("%w\n\nUsage: ./install.sh [--target codex|claude|antigravity|opencode] [--mode symlink|copy] [--force]", err)
 }
 
 func promptMissing(cfg *config) error {
@@ -92,6 +92,7 @@ func promptMissing(cfg *config) error {
 					huh.NewOption("Codex", "codex"),
 					huh.NewOption("Claude", "claude"),
 					huh.NewOption("Antigravity", "antigravity"),
+					huh.NewOption("OpenCode", "opencode"),
 				).
 				Value(&cfg.Target),
 			huh.NewSelect[string]().
@@ -159,6 +160,19 @@ func install(cfg config) error {
 	hubReadme := filepath.Join(hubDir, "README.md")
 	if err := copyFile(filepath.Join(cfg.RepoRoot, ".mothership", "hub", "README.md"), hubReadme, cfg.Force); err != nil {
 		return err
+	}
+
+	if cfg.Target == "opencode" {
+		cmdCount, err := installOpenCodeCommands(cfg.RepoRoot, targetRoot, cfg.Force)
+		if err != nil {
+			return err
+		}
+
+		if err := verifyOpenCodeStructure(targetRoot); err != nil {
+			return fmt.Errorf("post-install verification: %w", err)
+		}
+
+		fmt.Printf("  opencode commands: %d installed in %s\n", cmdCount, filepath.Join(targetRoot, "commands"))
 	}
 
 	fmt.Printf("Installed Mothership to %s\n", targetRoot)
@@ -232,9 +246,39 @@ func targetRootFor(target string) string {
 		return filepath.Join(os.Getenv("HOME"), ".claude")
 	case "antigravity":
 		return filepath.Join(os.Getenv("HOME"), ".antigravity")
+	case "opencode":
+		return resolveOpenCodeDir()
 	default:
 		return ""
 	}
+}
+
+func resolveOpenCodeDir() string {
+	if root := os.Getenv("OPENCODE_HOME"); root != "" {
+		return root
+	}
+
+	home := os.Getenv("HOME")
+
+	searchPaths := []string{}
+	if xdg := os.Getenv("XDG_CONFIG_HOME"); xdg != "" {
+		searchPaths = append(searchPaths, filepath.Join(xdg, "opencode"))
+	}
+	searchPaths = append(searchPaths,
+		filepath.Join(home, ".config", "opencode"),
+		filepath.Join(home, ".opencode"),
+	)
+
+	for _, candidate := range searchPaths {
+		if info, err := os.Stat(candidate); err == nil && info.IsDir() {
+			return candidate
+		}
+	}
+
+	if xdg := os.Getenv("XDG_CONFIG_HOME"); xdg != "" {
+		return filepath.Join(xdg, "opencode")
+	}
+	return filepath.Join(home, ".config", "opencode")
 }
 
 func installPath(src, dst, mode string, force bool) error {
@@ -344,9 +388,113 @@ func copyFileWithMode(src, dst string, mode os.FileMode) error {
 }
 
 func isSupportedTarget(target string) bool {
-	return target == "codex" || target == "claude" || target == "antigravity"
+	return target == "codex" || target == "claude" || target == "antigravity" || target == "opencode"
 }
 
 func isSupportedMode(mode string) bool {
 	return mode == "symlink" || mode == "copy"
+}
+
+func installOpenCodeCommands(repoRoot, targetRoot string, force bool) (int, error) {
+	commandsDir := filepath.Join(targetRoot, "commands")
+	if err := os.MkdirAll(commandsDir, 0o755); err != nil {
+		return 0, fmt.Errorf("create commands dir: %w", err)
+	}
+
+	skillsDir := filepath.Join(repoRoot, "skills")
+	var count int
+
+	err := filepath.Walk(skillsDir, func(path string, info os.FileInfo, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if info.IsDir() {
+			return nil
+		}
+
+		rel, relErr := filepath.Rel(skillsDir, path)
+		if relErr != nil {
+			return fmt.Errorf("compute relative path for %s: %w", path, relErr)
+		}
+
+		if strings.HasPrefix(rel, ".system") {
+			return nil
+		}
+
+		var cmdRel string
+		dir := filepath.Dir(rel)
+		if info.Name() == "SKILL.md" {
+			if dir == "." {
+				return nil
+			}
+			cmdRel = dir + ".md"
+		} else if strings.HasSuffix(info.Name(), ".md") && dir == "." {
+			cmdRel = info.Name()
+		} else {
+			return nil
+		}
+
+		cmdFile := filepath.Join(commandsDir, cmdRel)
+		if err := copyFile(path, cmdFile, force); err != nil {
+			return fmt.Errorf("install command %s: %w", cmdRel, err)
+		}
+
+		count++
+		return nil
+	})
+	if err != nil {
+		return 0, fmt.Errorf("walk skills for opencode commands: %w", err)
+	}
+
+	return count, nil
+}
+
+func verifyOpenCodeStructure(targetRoot string) error {
+	commandsDir := filepath.Join(targetRoot, "commands")
+	info, err := os.Stat(commandsDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("commands directory missing: %s", commandsDir)
+		}
+		return fmt.Errorf("inspect commands dir: %w", err)
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("commands path is not a directory: %s", commandsDir)
+	}
+
+	var cmdFiles []string
+	var emptyFiles []string
+	filepath.Walk(commandsDir, func(path string, fi os.FileInfo, walkErr error) error {
+		if walkErr != nil || fi.IsDir() {
+			return nil
+		}
+		if !strings.HasSuffix(path, ".md") {
+			return nil
+		}
+
+		rel, relErr := filepath.Rel(commandsDir, path)
+		if relErr != nil {
+			rel = path
+		}
+		cmdFiles = append(cmdFiles, rel)
+
+		if fi.Size() == 0 {
+			emptyFiles = append(emptyFiles, rel)
+		}
+		return nil
+	})
+
+	var problems []string
+	if len(cmdFiles) == 0 {
+		problems = append(problems, "no command files found in commands/")
+	}
+	if len(emptyFiles) > 0 {
+		problems = append(problems, fmt.Sprintf("empty command files: %s", strings.Join(emptyFiles, ", ")))
+	}
+
+	if len(problems) > 0 {
+		return fmt.Errorf("structure issues: %s", strings.Join(problems, "; "))
+	}
+
+	return nil
 }
