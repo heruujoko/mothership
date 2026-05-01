@@ -225,6 +225,7 @@ Mothership now makes that separation host-explicit:
 This repository ships with:
 
 - the installable [`mothership` skill](skills/mothership/SKILL.md) as the manual entrypoint
+- the [`mothership:setup` skill](skills/mothership-setup/SKILL.md) for wiki configuration
 - workflow support docs in `skills/` for intake, risk, parallelization, QA, worktrees, and escalation
 - bundled `obra` skills used during research, planning, and debugging flows
 - focused git/GitHub skills for `commit`, `commit-push`, `create-pr`, and `pr-maintainer`
@@ -323,7 +324,7 @@ Required auxiliary skills are listed in
 - `mothership-config/`: canonical workflow, roles registry, skill dependencies, and wiki schema
 - `skills/`: installable skills plus supporting workflow guidance
 - `skills/mothership/wiki-protocol.md`: wiki role permissions, quality gate, and promotion process
-- `skills/mothership/SKILL_SETUP.md`: wiki setup skill documentation
+- `skills/mothership-setup/SKILL.md`: wiki setup skill (invoked as `/mothership:setup`)
 - `skills/mothership/scripts/wiki-setup.sh`: wiki initialization script
 - `.mothership/hub/`: local hub contract and runtime state pattern
 - `.mothership/`: ignored runtime artifacts created during execution

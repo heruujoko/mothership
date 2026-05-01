@@ -1,14 +1,9 @@
+---
+name: mothership:setup
+description: Configure the mothership wiki for the current project. Run once per project to set up wiki directory structure, preferences, and default schema. Re-run to change wiki root location or other settings.
+---
+
 # Mothership Wiki Setup
-
-## Purpose
-
-Configure the mothership wiki for the current project. Sets up wiki directory
-structure, preferences, and default schema.
-
-## When to Use
-
-Run `/mothership:setup` once per project to configure wiki preferences.
-Re-run to change wiki root location or other settings.
 
 ## What It Does
 
