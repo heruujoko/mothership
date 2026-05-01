@@ -75,6 +75,11 @@ Return:
 - open questions
 - implementation considerations
 
+When wiki is configured, the researcher should also append discoveries to
+`.draft/<task-id>/insights.md` using the format:
+`### [research] <summary>` followed by the finding.
+This is in addition to (not instead of) the structured research output above.
+
 ### Coder
 
 Return:
@@ -85,6 +90,11 @@ Return:
 - blockers or follow-up items
 - PR or branch status when applicable
 
+When wiki is configured, the coder should also append implementation discoveries
+to `.draft/<task-id>/insights.md` using the format:
+`### [coding] <summary>` followed by the finding.
+This includes non-obvious gotchas, patterns discovered, and architectural observations.
+
 ### QA
 
 Return:
@@ -94,6 +104,11 @@ Return:
 - verification evidence
 - required changes
 - final disposition: approved / changes requested / escalate
+
+When wiki is configured, QA should note which L1 items from `.draft/<task-id>/`
+were confirmed or challenged in `.draft/<task-id>/notes.md`:
+- `### [qa] confirmed: <item summary>` for items that survived review
+- `### [qa] challenged: <item summary>` for items that are incorrect or superseded
 
 ### PR Monkey
 
