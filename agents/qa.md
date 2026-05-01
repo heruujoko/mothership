@@ -84,6 +84,7 @@ Record one of:
 - QA report (structured below)
 - disposition: approved, changes requested, or escalate to commander
 - updated PR review comments with findings
+- L1 wiki confirmation/challenge notes in `.draft/<task-id>/notes.md` when wiki is configured
 
 ## QA Report Structure
 
