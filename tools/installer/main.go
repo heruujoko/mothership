@@ -387,12 +387,20 @@ func copyFileWithMode(src, dst string, mode os.FileMode) error {
 	return nil
 }
 
+var supportedTargets = map[string]bool{
+	"codex": true, "claude": true, "antigravity": true, "opencode": true,
+}
+
+var supportedModes = map[string]bool{
+	"symlink": true, "copy": true,
+}
+
 func isSupportedTarget(target string) bool {
-	return target == "codex" || target == "claude" || target == "antigravity" || target == "opencode"
+	return supportedTargets[target]
 }
 
 func isSupportedMode(mode string) bool {
-	return mode == "symlink" || mode == "copy"
+	return supportedModes[mode]
 }
 
 func installOpenCodeCommands(repoRoot, targetRoot string, force bool) (int, error) {
@@ -427,7 +435,7 @@ func installOpenCodeCommands(repoRoot, targetRoot string, force bool) (int, erro
 			if dir == "." {
 				return nil
 			}
-			cmdRel = dir + ".md"
+			cmdRel = strings.ReplaceAll(dir, string(filepath.Separator), "/") + ".md"
 		} else if strings.HasSuffix(info.Name(), ".md") && dir == "." {
 			cmdRel = info.Name()
 		} else {
@@ -464,7 +472,7 @@ func verifyOpenCodeStructure(targetRoot string) error {
 
 	var cmdFiles []string
 	var emptyFiles []string
-	filepath.Walk(commandsDir, func(path string, fi os.FileInfo, walkErr error) error {
+	if err := filepath.Walk(commandsDir, func(path string, fi os.FileInfo, walkErr error) error {
 		if walkErr != nil || fi.IsDir() {
 			return nil
 		}
@@ -482,7 +490,9 @@ func verifyOpenCodeStructure(targetRoot string) error {
 			emptyFiles = append(emptyFiles, rel)
 		}
 		return nil
-	})
+	}); err != nil {
+		return fmt.Errorf("walk commands dir: %w", err)
+	}
 
 	var problems []string
 	if len(cmdFiles) == 0 {
