@@ -39,15 +39,15 @@ When this skill is invoked, use the local package artifacts in this order:
 5. Read `.mothership/hub/README.md` for the local hub state contract.
 6. Read `mothership-config/skill-dependencies.md` for required external skills.
 7. Read the supporting workflow docs in `skills/` as needed:
-   - `task-intake-and-decomposition.md`
-   - `risk-assessment.md`
-   - `research-execution.md`
-   - `parallelization-decision.md`
-   - `github-issue-management.md`
+   - `task-intake-and-decomposition/SKILL.md`
+   - `risk-assessment/SKILL.md`
+   - `research-execution/SKILL.md`
+   - `parallelization-decision/SKILL.md`
+   - `github-issue-management/SKILL.md`
    - `pr-maintainer/SKILL.md`
-   - `worktree-management.md`
-   - `qa-review-loop.md`
-   - `human-escalation.md`
+   - `worktree-management/SKILL.md`
+   - `qa-review-loop/SKILL.md`
+   - `human-escalation/SKILL.md`
 8. Apply the role docs in `agents/` when acting within a specific mothership role.
 
 ## Activation Rule
