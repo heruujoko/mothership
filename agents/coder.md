@@ -28,6 +28,7 @@ The coder agent implements a single scoped task defined by the commander. It wor
 - PR or PR update
 - implementation notes
 - blocker report when necessary
+- L1 wiki staging entries in `.draft/<task-id>/insights.md` when wiki is configured
 
 ## Working Rules
 
@@ -57,3 +58,4 @@ Coder work is complete when:
 - changes are pushed to the assigned branch
 - PR exists or is updated
 - notes explain any trade-offs, limitations, or follow-up work
+- implementation discoveries are appended to L1 staging if wiki is configured

@@ -65,3 +65,29 @@ To add a new role:
 2. Add a matching agent file in `agents/`.
 3. Define any supporting skill docs in `skills/`.
 4. Update commander workflow rules if the role changes orchestration behavior.
+
+## Wiki Responsibilities
+
+When wiki is configured for a project (via `/mothership:setup`), each role has additional wiki-related duties:
+
+### Commander
+- Reads `projects/<name>/index.md` at `intake` for project context
+- Runs lightweight lint at `intake`
+- Performs L2 promotion at `complete`: reads L1 drafts, applies quality gate, merges into wiki pages
+- Updates `index.md` and `log.md` after promotion
+- Cleans `.draft/<task-id>/` after promotion
+
+### Research Agent
+- Appends research discoveries to `.draft/<task-id>/insights.md` (L1)
+- Format: `### [research] <summary>` followed by findings
+
+### Coder Agent
+- Appends implementation discoveries to `.draft/<task-id>/insights.md` (L1)
+- Format: `### [coding] <summary>` followed by findings
+
+### QA Agent
+- Notes which L1 items were confirmed or challenged in `.draft/<task-id>/notes.md`
+- Format: `### [qa] confirmed: <item>` or `### [qa] challenged: <item>`
+
+### PR Monkey
+- No specific wiki duties. PR context is captured by commander during L2 promotion.

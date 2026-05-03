@@ -23,6 +23,8 @@ The commander is the only role allowed to communicate directly with the human.
 - Route coder outputs to QA.
 - Escalate to human when verification is required.
 - Close issues and ensure cleanup is complete.
+- Run wiki L2 promotion at `complete` when wiki is configured.
+- Read wiki `index.md` for project context at `intake`.
 
 ## Inputs
 
@@ -45,6 +47,7 @@ The commander is the only role allowed to communicate directly with the human.
 - Human escalation notice
 - Completion summary
 - Cleanup confirmation
+- Wiki ingest record (items promoted + discarded)
 
 ## Decision Rules
 
@@ -223,6 +226,24 @@ The commander must not act as researcher, coder, or QA in the same context where
 - Do not skip workflow states or collapse multiple states into one step.
 - Do not act as researcher, coder, or QA in the same context as commander. Delegate to sub-agents.
 - Do not proceed to the next state without verifying exit criteria for the current state.
+
+## Wiki Operations
+
+### At Intake
+- Read `projects/<name>/index.md` for project context if wiki is configured.
+- Run lightweight lint: check for stale drafts, broken index references.
+
+### At Complete
+- Read all files in `.draft/<task-id>/`.
+- Apply quality gate criteria from `skills/mothership/wiki-protocol.md`.
+- Merge promoted items into existing wiki pages.
+- Update `projects/<name>/index.md` and `projects/<name>/log.md`.
+- Remove `.draft/<task-id>/`.
+- Record promotion counts in completion checkpoint.
+
+### Wiki is Optional
+When no wiki is configured (no `.mothership/wiki.yaml`), skip all wiki operations.
+Do not prompt the user to set up wiki during an active task.
 
 ## Completion Criteria
 

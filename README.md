@@ -12,6 +12,7 @@ failure modes:
 - "done" being declared without real QA
 - task context disappearing between iterations
 - local agent memory diverging from GitHub reality
+- discoveries from one session being invisible to the next
 
 Mothership treats software work like an operational system, not a chat thread.
 Every task has a state. Every transition is explicit. Important decisions are
@@ -51,6 +52,7 @@ visible:
 - **Coding stays scoped.** Coder agents are told to implement the issue, not quietly redesign the roadmap.
 - **QA is mandatory.** A task does not skip from "code exists" to "complete."
 - **Cleanup closes the loop.** Branches, worktrees, dirty state, and residual artifacts are handled explicitly.
+- **Knowledge compounds across sessions.** Discoveries from research, coding, and QA are captured, verified, and promoted into a persistent wiki that future tasks can read.
 
 This is especially useful for:
 
@@ -144,12 +146,49 @@ If hub state is corrupted or incomplete, Mothership can mark the task as
 `reconstructed` and rebuild state from GitHub artifacts rather than pretending
 nothing happened.
 
-### 4. Mandatory review loop
+### 4. Compounding knowledge layer (wiki)
+
+Mothership ships with an optional wiki that persists discoveries across
+sessions. It follows a two-tier model inspired by the Karpathy LLM wiki
+pattern — plain Markdown, no database, no vector search.
+
+**L1 — Staging (`.draft/`)**: During a task, sub-agents append raw
+discoveries to per-task draft folders. No citations needed. Lightweight and
+append-only. Discarded if not promoted within 2 completed tasks.
+
+**L2 — Verified (`insights/`, `decisions/`)**: At task completion, the
+commander promotes L1 items through a quality gate — each item needs a
+verifiable citation (PR URL, commit SHA, or issue number), must have survived
+QA, and must describe something useful to a future session.
+
+The directory structure lives under a configurable wiki root:
+
+```
+<wiki-root>/
+  index.md                       # Master catalog (L2 only)
+  log.md                         # Global timeline
+  projects/<project-name>/
+    index.md                     # Project catalog
+    log.md                       # Project timeline
+    .draft/<task-id>/            # L1 staging (per-task)
+    insights/                    # L2 verified insights
+    decisions/                   # L2 verified decisions
+```
+
+At the start of each task, the commander reads the project's `index.md` to
+load context from previous work. Future sessions build on past discoveries
+without anyone needing to re-learn what was already figured out.
+
+Setup and protocol are documented in:
+- [skills/mothership/wiki-protocol.md](skills/mothership/wiki-protocol.md) — role permissions, quality gate, promotion process
+- [mothership-config/wiki-schema-default.md](mothership-config/wiki-schema-default.md) — writing conventions and templates
+
+### 5. Mandatory review loop
 
 The workflow does not end at implementation. QA reviews against scope, research,
 and risk profile before the task can reach `complete`.
 
-### 5. Explicit human pauses
+### 6. Explicit human pauses
 
 `waiting_for_human` is a real state. That matters because many tasks fail when
 automation keeps moving after it should have stopped and asked for judgment.
@@ -186,6 +225,7 @@ Mothership now makes that separation host-explicit:
 This repository ships with:
 
 - the installable [`mothership` skill](skills/mothership/SKILL.md) as the manual entrypoint
+- the [`mothership:setup` skill](skills/mothership-setup/SKILL.md) for wiki configuration
 - workflow support docs in `skills/` for intake, risk, parallelization, QA, worktrees, and escalation
 - bundled `obra` skills used during research, planning, and debugging flows
 - focused git/GitHub skills for `commit`, `commit-push`, `create-pr`, and `pr-maintainer`
@@ -256,6 +296,24 @@ High-level flow:
 6. Persist meaningful checkpoints to GitHub.
 7. Close the loop with QA and cleanup.
 
+### Setting up the wiki (optional)
+
+Run `/mothership:setup` once per project to configure the wiki. The setup
+script (`skills/mothership/scripts/wiki-setup.sh`) will:
+
+1. Ask for a wiki root location (default: `~/.mothership/wiki/`)
+2. Create the directory structure under `projects/<project-name>/`
+3. Write preferences to `.mothership/wiki.yaml`
+4. Initialize `schema.md`, `index.md`, and `log.md`
+
+After setup, wiki operations happen automatically as side-effects of the
+workflow — no extra steps needed. Sub-agents write to L1 staging during
+research, coding, and QA. The commander promotes verified items to L2 at
+completion.
+
+When no wiki is configured (no `.mothership/wiki.yaml`), all wiki operations
+are silently skipped.
+
 Required auxiliary skills are listed in
 [mothership-config/skill-dependencies.md](mothership-config/skill-dependencies.md).
 
@@ -263,8 +321,11 @@ Required auxiliary skills are listed in
 
 - `agents/`: role contracts for commander, researcher, coder, QA, and PR monkey
 - `agents/registry.yaml`: host-specific mapping from mothership roles to the sub-agent tool flavor
-- `mothership-config/`: canonical workflow, roles registry, and skill dependencies
+- `mothership-config/`: canonical workflow, roles registry, skill dependencies, and wiki schema
 - `skills/`: installable skills plus supporting workflow guidance
+- `skills/mothership/wiki-protocol.md`: wiki role permissions, quality gate, and promotion process
+- `skills/mothership-setup/SKILL.md`: wiki setup skill (invoked as `/mothership:setup`)
+- `skills/mothership/scripts/wiki-setup.sh`: wiki initialization script
 - `.mothership/hub/`: local hub contract and runtime state pattern
 - `.mothership/`: ignored runtime artifacts created during execution
 
@@ -272,6 +333,7 @@ Required auxiliary skills are listed in
 
 - **State over vibes.** Every task is in a defined state.
 - **Durability over convenience.** Important decisions should survive the session.
+- **Knowledge should compound.** Discoveries from past sessions should be available to future ones.
 - **Research before implementation when risk is real.**
 - **QA is part of delivery, not an optional afterthought.**
 - **Blocked work should be visible, not buried.**

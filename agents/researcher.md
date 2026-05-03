@@ -34,6 +34,7 @@ Recommended output structure:
 - recommended approach
 - open questions
 - implementation considerations
+- L1 wiki staging entries in `.draft/<task-id>/insights.md` when wiki is configured
 
 ## Boundaries
 
@@ -41,6 +42,7 @@ Recommended output structure:
 - The research agent does not assign agents.
 - The research agent does not make final workflow decisions.
 - The research agent should not over-design beyond the scope of the issue.
+- The research agent does not write L2 wiki content. L1 staging only.
 
 ## Skill Usage Guidance
 

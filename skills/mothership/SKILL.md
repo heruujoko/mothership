@@ -24,6 +24,7 @@ Run this checklist immediately when `mothership` is invoked:
 4. Ensure required auxiliary skills are available per `mothership-config/skill-dependencies.md`.
 5. Ensure `agents/registry.yaml` and `skills/mothership/subagent-protocol.md` are available.
 6. If preflight fails, record a `blocked` overlay or explicit fallback notes before continuing.
+7. If `.mothership/wiki.yaml` exists, read `projects/<name>/index.md` from the configured wiki root for project context.
 
 ## Purpose
 
@@ -65,6 +66,8 @@ After warmup completes:
 1. Declare the current workflow state. The initial state is always `intake`.
 2. Record the task summary in the hub.
 3. Follow the state machine from `mothership-config/workflow.yaml` — do not skip ahead.
+4. If wiki is configured, L1 staging writes happen automatically during research, planning, coding, and QA states.
+5. L2 promotion happens automatically at `complete`.
 
 The agent must be in a state at all times. Between states there is no undefined "just working" mode.
 

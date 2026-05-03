@@ -19,6 +19,7 @@ states:
       - Task summary is recorded in the hub.
       - Initial risk assessment is recorded.
       - Success criteria and obvious dependencies are noted.
+      - "Wiki index is read for project context if wiki is configured."
 
   research:
     purpose: Validate assumptions and gather context before implementation planning.
@@ -32,6 +33,7 @@ states:
       - Research findings are written to GitHub.
       - Open questions are identified.
       - Risks and constraints are summarized for planning.
+      - "Research findings are appended to `.draft/<task-id>/insights.md` if wiki is configured."
 
   planning:
     purpose: Decide execution shape, create implementation scope, and allocate isolation.
@@ -43,6 +45,7 @@ states:
       - Single-agent or multi-agent decision is recorded.
       - Implementation issues are created or updated.
       - Worktree allocation decision is recorded.
+      - "Planning decisions are appended to `.draft/<task-id>/decisions.md` if wiki is configured."
 
   coding:
     purpose: Execute the scoped implementation work in the assigned branch and optional worktree.
@@ -54,6 +57,7 @@ states:
       - Coder sub-agent output or blocker is recorded.
       - PR exists or implementation checkpoint is recorded.
       - Relevant implementation notes are written back to GitHub or hub state.
+      - "Implementation discoveries are appended to `.draft/<task-id>/insights.md` if wiki is configured."
 
   qa:
     purpose: Review implementation against issue scope, research findings, and risk profile.
@@ -67,6 +71,7 @@ states:
       - QA sub-agent output or blocker is recorded.
       - QA disposition is recorded.
       - Required changes or escalation reason is explicit.
+      - "L1 items confirmed or challenged by QA are noted in `.draft/<task-id>/notes.md` if wiki is configured."
 
   waiting_for_human:
     purpose: Pause automation until a required human decision or verification is received.
@@ -88,6 +93,9 @@ states:
       - Completion status is posted to GitHub.
       - Issues and PR references are up to date.
       - Required QA and human signoff are recorded.
+      - "Wiki ingest is recorded (items promoted count + items discarded count) if wiki is configured."
+      - "Wiki index and log are updated with promoted items if wiki is configured."
+      - "`.draft/<task-id>/` is cleaned up after promotion if wiki is configured."
 
   cleanup:
     purpose: Clean operational residue and close the orchestration loop safely.
