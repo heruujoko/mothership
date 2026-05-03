@@ -34,4 +34,4 @@ Do not split a task into parallel sub-issues when the split would cause shared o
 
 ## Cross-Reference
 
-See `skills/github-issue-management.md` for parent-issue-first tracking strategy.
+See `skills/github-issue-management/SKILL.md` for parent-issue-first tracking strategy.

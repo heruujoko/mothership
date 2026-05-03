@@ -213,14 +213,14 @@ mothership/
 │   ├── coder.md
 │   └── qa.md
 ├── skills/
-│   ├── task-intake-and-decomposition.md
-│   ├── research-execution.md
-│   ├── risk-assessment.md
-│   ├── parallelization-decision.md
-│   ├── github-issue-management.md
-│   ├── worktree-management.md
-│   ├── qa-review-loop.md
-│   └── human-escalation.md
+│   ├── task-intake-and-decomposition/SKILL.md
+│   ├── research-execution/SKILL.md
+│   ├── risk-assessment/SKILL.md
+│   ├── parallelization-decision/SKILL.md
+│   ├── github-issue-management/SKILL.md
+│   ├── worktree-management/SKILL.md
+│   ├── qa-review-loop/SKILL.md
+│   └── human-escalation/SKILL.md
 ├── registry/
 │   └── roles.md
 └── hub/
