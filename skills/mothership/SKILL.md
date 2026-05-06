@@ -25,6 +25,7 @@ Run this checklist immediately when `mothership` is invoked:
 5. Ensure `agents/registry.yaml` and `skills/mothership/subagent-protocol.md` are available.
 6. If preflight fails, record a `blocked` overlay or explicit fallback notes before continuing.
 7. If `.mothership/wiki.yaml` exists, read `projects/<name>/index.md` from the configured wiki root for project context.
+8. On pi: verify the `mothership_spawn` extension is available under `~/.pi/agent/extensions/`. If absent, delegation will not work — record a `blocked` overlay and continue without sub-agent spawning.
 
 ## Purpose
 
@@ -152,6 +153,11 @@ For Codex:
 - `researcher` should use `explorer`.
 - `coder` should use `worker`.
 - `qa` should use `explorer`.
+
+For Pi:
+
+- Use `mothership_spawn` with the `role` and `task` arguments declared in `agents/registry.yaml` under the `pi` host.
+- See `skills/mothership/subagent-protocol.md` for the full Pi delegation protocol.
 
 The commander may gather minimal routing context in `intake` and `planning`.
 After delegation starts, it must not continue the delegated work itself.

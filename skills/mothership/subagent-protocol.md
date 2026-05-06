@@ -150,6 +150,30 @@ Examples:
 When the delegated task depends on current thread context, fork the context.
 For coder roles, assign clear file or module ownership in the prompt.
 
+### Pi
+
+Pi has no built-in sub-agent spawning. Delegation requires the
+`mothership_spawn` extension tool to be loaded (installed under
+`~/.pi/agent/extensions/` alongside the mothership package).
+
+Use `mothership_spawn` with the arguments declared in `agents/registry.yaml`
+under the `pi` host for each role:
+
+- `role` — the mothership role to invoke (`researcher`, `coder`, `qa`, `pr_monkey`)
+- `task` — the task description or question for the sub-agent
+- `contract_file` — path to the role contract (`agents/<role>.md`)
+- `context` — any additional context to pass (issue, branch, files, etc.)
+
+The extension spawns a new `pi` subprocess for the delegated role and returns
+its output to commander. Commander waits for completion before transitioning.
+
+**Requirements:**
+- The `mothership_spawn` extension must be installed. See `skills/mothership/SKILL.md`
+  warmup checklist.
+- The subprocess inherits the pi working directory. File paths in the context
+  must be absolute or relative to the working directory.
+- The subprocess uses the same model unless overridden in the extension config.
+
 ## State Gates
 
 Before leaving a delegated state, commander must have evidence that:

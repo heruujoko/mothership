@@ -51,7 +51,7 @@ func parseFlags(args []string) (config, error) {
 	fs.SetOutput(io.Discard)
 
 	fs.StringVar(&cfg.RepoRoot, "repo-root", "", "repository root")
-	fs.StringVar(&cfg.Target, "target", "", "install target: codex, claude, antigravity, opencode")
+	fs.StringVar(&cfg.Target, "target", "", "install target: codex, claude, antigravity, opencode, pi")
 	fs.StringVar(&cfg.Mode, "mode", "", "install mode: symlink, copy")
 	fs.BoolVar(&cfg.Force, "force", false, "replace existing paths")
 
@@ -93,6 +93,7 @@ func promptMissing(cfg *config) error {
 					huh.NewOption("Claude", "claude"),
 					huh.NewOption("Antigravity", "antigravity"),
 					huh.NewOption("OpenCode", "opencode"),
+					huh.NewOption("Pi", "pi"),
 				).
 				Value(&cfg.Target),
 			huh.NewSelect[string]().
@@ -248,6 +249,8 @@ func targetRootFor(target string) string {
 		return filepath.Join(os.Getenv("HOME"), ".antigravity")
 	case "opencode":
 		return resolveOpenCodeDir()
+	case "pi":
+		return filepath.Join(os.Getenv("HOME"), ".pi", "agent")
 	default:
 		return ""
 	}
@@ -388,7 +391,7 @@ func copyFileWithMode(src, dst string, mode os.FileMode) error {
 }
 
 var supportedTargets = map[string]bool{
-	"codex": true, "claude": true, "antigravity": true, "opencode": true,
+	"codex": true, "claude": true, "antigravity": true, "opencode": true, "pi": true,
 }
 
 var supportedModes = map[string]bool{
