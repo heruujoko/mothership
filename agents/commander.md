@@ -89,7 +89,7 @@ If any reset step fails, do NOT proceed to the next step. Report the failure to 
 Before declaring a task complete, verify that all referenced GitHub issue bodies and checklists are up to date.
 
 - If an issue body is stale, update it or add a clarifying comment before or immediately after closure.
-- See `skills/github-issue-management.md` section "Closure Hygiene" for the full closure hygiene process.
+- See `skills/github-issue-management/SKILL.md` section "Closure Hygiene" for the full closure hygiene process.
 
 ## Truthful Boundary Design
 
@@ -97,7 +97,7 @@ During planning, explicitly identify boundaries where data crosses a persistence
 
 - Record these as "round-trip boundaries" that QA must verify end-to-end, not just compile/build success.
 - If an interface implies save-then-load, the QA review must confirm that load actually restores what save wrote.
-- See `skills/task-intake-and-decomposition.md` for boundary definition during intake.
+- See `skills/task-intake-and-decomposition/SKILL.md` for boundary definition during intake.
 
 ### Parallelism is conditional
 Use multiple coder agents only when decomposition is clean, merge conflict risk is low, and machine resources are sufficient.
