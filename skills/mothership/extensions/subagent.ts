@@ -13,6 +13,8 @@ import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { Text } from "@mariozechner/pi-tui";
 import { Type } from "typebox";
 
+const VALID_ROLES = new Set(["researcher", "coder", "qa", "pr_monkey"]);
+
 interface MothershipSpawnResult {
 	role: string;
 	output: string;
@@ -57,6 +59,7 @@ async function runPiSubprocess(
 	args.push(`Task: ${task}`);
 
 	let wasAborted = false;
+	let stderrBuffer = "";
 	const messages: Message[] = [];
 
 	const exitCode = await new Promise<number>((resolve) => {
@@ -66,7 +69,7 @@ async function runPiSubprocess(
 			stdio: ["ignore", "pipe", "pipe"],
 		});
 
-		let buffer = "";
+		let stdoutBuffer = "";
 
 		const processLine = (line: string) => {
 			if (!line.trim()) return;
@@ -100,14 +103,18 @@ async function runPiSubprocess(
 		};
 
 		proc.stdout.on("data", (data) => {
-			buffer += data.toString();
-			const lines = buffer.split("\n");
-			buffer = lines.pop() || "";
+			stdoutBuffer += data.toString();
+			const lines = stdoutBuffer.split("\n");
+			stdoutBuffer = lines.pop() || "";
 			for (const line of lines) processLine(line);
 		});
 
+		proc.stderr.on("data", (data) => {
+			stderrBuffer += data.toString();
+		});
+
 		proc.on("close", (code) => {
-			if (buffer.trim()) processLine(buffer);
+			if (stdoutBuffer.trim()) processLine(stdoutBuffer);
 			resolve(code ?? 0);
 		});
 
@@ -116,15 +123,20 @@ async function runPiSubprocess(
 		});
 
 		if (signal) {
+			let sigkillTimer: ReturnType<typeof setTimeout> | undefined;
 			const killProc = () => {
 				wasAborted = true;
 				proc.kill("SIGTERM");
-				setTimeout(() => {
+				sigkillTimer = setTimeout(() => {
 					if (!proc.killed) proc.kill("SIGKILL");
 				}, 5000);
 			};
 			if (signal.aborted) killProc();
 			else signal.addEventListener("abort", killProc, { once: true });
+			// Clear the SIGKILL timer if the process exits normally before it fires
+			proc.on("close", () => {
+				if (sigkillTimer !== undefined) clearTimeout(sigkillTimer);
+			});
 		}
 	});
 
@@ -133,7 +145,8 @@ async function runPiSubprocess(
 	if (wasAborted) {
 		result.error = "Aborted by user";
 	} else if (exitCode !== 0) {
-		result.error = `Sub-process exited with code ${exitCode}`;
+		const stderr = stderrBuffer.trim();
+		result.error = `Sub-process exited with code ${exitCode}${stderr ? `: ${stderr}` : ""}`;
 	}
 
 	return result;
@@ -176,10 +189,25 @@ export default function (pi: ExtensionAPI) {
 		async execute(_toolCallId, params, signal, _onUpdate, ctx) {
 			const role = params.role;
 			const task = params.task ?? "";
+			const cwd = params.cwd ?? ctx.cwd;
+
+			// Validate role before any work
+			if (!VALID_ROLES.has(role)) {
+				return {
+					content: [
+						{
+							type: "text",
+							text: `mothership_spawn failed: unknown role "${role}". Valid roles: ${[...VALID_ROLES].join(", ")}`,
+						},
+					],
+					details: { role, error: "invalid_role" },
+					isError: true,
+				};
+			}
+
 			const contractFile =
 				params.contract_file ||
 				path.join(ctx.cwd, "agents", `${role}.md`);
-			const cwd = params.cwd ?? ctx.cwd;
 
 			const contextNote = params.context
 				? `\n\n---\n\nAdditional context:\n${params.context}\n\n---\n\n`
