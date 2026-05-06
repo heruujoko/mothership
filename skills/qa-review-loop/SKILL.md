@@ -1,4 +1,9 @@
-# Skill: QA Review Loop
+---
+name: qa-review-loop
+description: Define the review cycle between coder agents, QA, and commander. Covers feedback routing, iteration, and approval criteria.
+---
+
+# QA Review Loop
 
 ## Purpose
 

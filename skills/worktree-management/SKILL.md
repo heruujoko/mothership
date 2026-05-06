@@ -1,4 +1,9 @@
-# Skill: Worktree Management
+---
+name: worktree-management
+description: Define when and how isolated git worktrees are used for coder agents. Covers worktree creation, allocation, and cleanup.
+---
+
+# Worktree Management
 
 ## Purpose
 

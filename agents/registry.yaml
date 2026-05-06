@@ -19,6 +19,9 @@ roles:
     codex:
       tool: spawn_agent
       agent_type: explorer
+    pi:
+      tool: mothership_spawn
+      role: researcher
 
   coder:
     delegated: true
@@ -30,6 +33,9 @@ roles:
     codex:
       tool: spawn_agent
       agent_type: worker
+    pi:
+      tool: mothership_spawn
+      role: coder
 
   qa:
     delegated: true
@@ -41,6 +47,9 @@ roles:
     codex:
       tool: spawn_agent
       agent_type: explorer
+    pi:
+      tool: mothership_spawn
+      role: qa
 
   pr_monkey:
     delegated: true
@@ -52,3 +61,6 @@ roles:
     codex:
       tool: spawn_agent
       agent_type: default
+    pi:
+      tool: mothership_spawn
+      role: pr_monkey

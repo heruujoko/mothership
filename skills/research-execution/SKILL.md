@@ -1,4 +1,9 @@
-# Skill: Research Execution
+---
+name: research-execution
+description: Define how research agents investigate a task before implementation planning. Covers hypothesis formation, context gathering, and structured output.
+---
+
+# Research Execution
 
 ## Purpose
 

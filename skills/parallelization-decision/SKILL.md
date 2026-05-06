@@ -1,4 +1,9 @@
-# Skill: Parallelization Decision
+---
+name: parallelization-decision
+description: Help commander decide whether work should be assigned to one coder agent or multiple coder agents in parallel.
+---
+
+# Parallelization Decision
 
 ## Purpose
 

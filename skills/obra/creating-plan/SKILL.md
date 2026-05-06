@@ -1,5 +1,5 @@
 ---
-name: obra/creating-plan
+name: creating-plan
 description: Bundled dependency skill used by mothership research for structured plan creation.
 ---
 

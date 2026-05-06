@@ -1,11 +1,19 @@
 # Mothership Local Agent Instructions
 
-This repository is an installable mothership package for Codex agents and skills.
+This repository is an installable mothership package for Codex, Claude, and Pi agents and skills.
 
 ## Entrypoint
 
 - Use the `mothership` skill as the manual entrypoint when orchestration behavior is desired.
 - Do not assume mothership should activate implicitly in mixed-skill environments.
+
+## Supported Hosts
+
+- **Claude Code** — uses built-in `Agent` tool for delegation
+- **Codex** — uses built-in `spawn_agent` for delegation
+- **Pi** — uses `mothership_spawn` extension tool (requires `skills/mothership/extensions/subagent.ts` installed under `~/.pi/agent/extensions/`)
+
+Install with `./install.sh --target <host>`. See `agents/registry.yaml` for per-host role mappings.
 
 ## Canonical Config
 

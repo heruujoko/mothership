@@ -1,5 +1,5 @@
 ---
-name: obra/systematical-debugging
+name: systematical-debugging
 description: Bundled dependency skill used by mothership coding after QA feedback for structured debugging.
 ---
 

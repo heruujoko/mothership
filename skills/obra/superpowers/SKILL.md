@@ -1,5 +1,5 @@
 ---
-name: obra/superpowers
+name: superpowers
 description: Bundled dependency skill used by mothership research for broad context gathering and option mapping.
 ---
 
