@@ -1,4 +1,9 @@
-# Skill: Human Escalation
+---
+name: human-escalation
+description: Define when and how the commander requests human input during the mothership workflow. Covers escalation triggers and escalation handling.
+---
+
+# Human Escalation
 
 ## Purpose
 

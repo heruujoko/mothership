@@ -1,4 +1,9 @@
-# Skill: Risk Assessment
+---
+name: risk-assessment
+description: Give commander a structured way to classify task risk before choosing execution strategy. Covers risk dimensions and mitigation planning.
+---
+
+# Risk Assessment
 
 ## Purpose
 

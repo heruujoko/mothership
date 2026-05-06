@@ -1,4 +1,9 @@
-# Skill: Task Intake and Decomposition
+---
+name: task-intake-and-decomposition
+description: Help commander turn an incoming human request into an actionable execution plan. Covers scoping, decomposition, and success criteria definition.
+---
+
+# Task Intake and Decomposition
 
 ## Purpose
 

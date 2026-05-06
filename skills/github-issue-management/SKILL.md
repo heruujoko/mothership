@@ -1,4 +1,9 @@
-# Skill: GitHub Issue Management
+---
+name: github-issue-management
+description: Define how mothership uses GitHub issues as durable workflow artifacts. Covers issue creation, linking, status tracking, and closure hygiene.
+---
+
+# GitHub Issue Management
 
 ## Purpose
 
