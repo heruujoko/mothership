@@ -176,6 +176,15 @@ func install(cfg config) error {
 		fmt.Printf("  opencode commands: %d installed in %s\n", cmdCount, filepath.Join(targetRoot, "commands"))
 	}
 
+	if cfg.Target == "pi" {
+		extSrc := filepath.Join(cfg.RepoRoot, "skills", "mothership", "extensions", "subagent.ts")
+		extDst := filepath.Join(targetRoot, "extensions", "subagent.ts")
+		if err := copyFile(extSrc, extDst, cfg.Force); err != nil {
+			return err
+		}
+		fmt.Printf("  mothership_spawn extension: %s\n", extDst)
+	}
+
 	fmt.Printf("Installed Mothership to %s\n", targetRoot)
 	fmt.Printf("  target: %s\n", cfg.Target)
 	fmt.Printf("  mode: %s\n", cfg.Mode)
