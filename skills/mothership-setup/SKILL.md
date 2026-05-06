@@ -17,7 +17,7 @@ description: Configure the mothership wiki for the current project. Run once per
 
 ## Implementation
 
-Executes `skills/mothership/scripts/wiki-setup.sh` from the repository root.
+Executes `../mothership/scripts/wiki-setup.sh` from the skill directory.
 
 ## Preferences
 
