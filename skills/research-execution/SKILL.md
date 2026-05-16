@@ -17,6 +17,13 @@ Define how research agents investigate a task before implementation planning.
 - compare implementation options
 - return a concise recommendation
 
+## Skill Coordination
+
+During mothership research phase, invoke `obra/superpowers` for context
+expansion and option mapping before writing findings. The superpowers skill
+provides the process for gathering context and comparing approaches; this
+skill defines the output format.
+
 ## Output Template
 
 - summary

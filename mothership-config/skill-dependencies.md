@@ -8,16 +8,20 @@ orchestration proceeds beyond `intake`.
 - `obra/superpowers`
 - `obra/creating-plan`
 - `obra/systematical-debugging`
+- `obra/brainstorming`
 
 These are preinstalled in this repository under:
 - `skills/obra/superpowers/SKILL.md`
 - `skills/obra/creating-plan/SKILL.md`
 - `skills/obra/systematical-debugging/SKILL.md`
+- `skills/obra/brainstorming/SKILL.md`
 
 ## Phase Mapping
 
-- `research`: prefer `obra/superpowers` and `obra/creating-plan`
-- `coding` after QA requested changes: prefer `obra/systematical-debugging`
+- `intake`: `task-intake-and-decomposition` for scoping
+- `research`: `obra/superpowers` (research-mode brainstorming) and `research-execution`
+- `planning`: `obra/brainstorming` (interactive-mode, if design exploration needed) and `writing-plans`
+- `coding` after QA requested changes: `obra/systematical-debugging`
 
 ## Commander Rule
 

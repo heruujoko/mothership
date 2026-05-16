@@ -6,13 +6,14 @@ runtime_dir="${repo_root}/.mothership"
 preflight_dir="${runtime_dir}/preflight"
 hub_dir="${runtime_dir}/hub"
 hub_checkpoints_dir="${hub_dir}/checkpoints"
+hub_refs_dir="${hub_dir}/refs"
 report_file="${preflight_dir}/skills-status.md"
 dependencies_file="${repo_root}/mothership-config/skill-dependencies.md"
 gitignore_file="${repo_root}/.gitignore"
 registry_file="${repo_root}/agents/registry.yaml"
 subagent_protocol_file="${repo_root}/skills/mothership/subagent-protocol.md"
 
-mkdir -p "${runtime_dir}" "${preflight_dir}" "${runtime_dir}/sessions" "${hub_checkpoints_dir}"
+mkdir -p "${runtime_dir}" "${preflight_dir}" "${runtime_dir}/sessions" "${hub_checkpoints_dir}" "${hub_refs_dir}"
 
 if [ ! -f "${gitignore_file}" ]; then
   touch "${gitignore_file}"
@@ -28,6 +29,7 @@ required_skills=(
   "obra/superpowers"
   "obra/creating-plan"
   "obra/systematical-debugging"
+  "obra/brainstorming"
 )
 
 search_roots=(
