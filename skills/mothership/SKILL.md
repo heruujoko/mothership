@@ -66,9 +66,10 @@ After warmup completes:
 
 1. Declare the current workflow state. The initial state is always `intake`.
 2. Record the task summary in the hub.
-3. Follow the state machine from `mothership-config/workflow.yaml` — do not skip ahead.
-4. If wiki is configured, L1 staging writes happen automatically during research, planning, coding, and QA states.
-5. L2 promotion happens automatically at `complete`.
+3. Use `obra/brainstorming` during `intake` before any delegation.
+4. Follow the state machine from `mothership-config/workflow.yaml` — do not skip ahead.
+5. If wiki is configured, L1 staging writes happen automatically during research, planning, coding, and QA states.
+6. L2 promotion happens automatically at `complete`.
 
 The agent must be in a state at all times. Between states there is no undefined "just working" mode.
 
@@ -96,22 +97,30 @@ Before transitioning, verify that the `allowed_transitions` list in `mothership-
 ### Only do work appropriate to the current state
 
 - In `intake`: capture the task, record risk and success criteria, run warmup. Do not start researching or coding.
-- In `research`: investigate, gather context, validate assumptions. Do not start planning or coding.
-- In `planning`: decide execution shape, create scope, allocate resources. Do not start coding.
-- In `coding`: implement the scoped change. Do not expand scope or redesign.
+- In `research`: investigate, gather context, validate assumptions, and return a planning-ready handoff. Do not start coding.
+- In `planning`: present the design, create the explicit implementation plan, and allocate resources. Do not start coding until the plan exists.
+- In `coding`: implement the scoped change by executing the approved plan. Do not expand scope or redesign.
 - In `qa`: review against scope and findings. Do not rewrite code yourself.
 - In `complete`: record final status. Do not add new work.
 - In `cleanup`: clean operational residue. Do not start new tasks.
+
+### Phase skill routing
+
+- In `intake`: invoke `task-intake-and-decomposition` and `obra/brainstorming`.
+- In `research`: the researcher must invoke `obra/brainstorming` in research mode, `obra/superpowers`, and `obra/making-plans`.
+- In `planning`: invoke `obra/brainstorming` to present the design and `obra/making-plans` to record the implementation plan.
+- In `coding`: the coder must invoke `obra/executing-plans`. If QA sends the work back, add `obra/systematical-debugging` before resuming.
 
 ### Do not solve the problem directly
 
 Mothership is an orchestration system. After reading the task and completing intake, the agent must:
 
-1. Assess whether research is needed. If yes, spawn a sub-agent to research.
-2. Plan the execution shape.
-3. Spawn a sub-agent to implement.
-4. Spawn a sub-agent to review.
-5. Close the loop.
+1. Complete `intake` with brainstorming-driven clarification.
+2. Spawn a sub-agent to research.
+3. Complete `planning` with a recorded design and explicit implementation plan.
+4. Spawn a sub-agent to implement against that plan.
+5. Spawn a sub-agent to review.
+6. Close the loop.
 
 Do not skip from "I understand the task" to "here is the solution." The state machine exists precisely to prevent this pattern.
 
@@ -191,5 +200,5 @@ must never merge without explicit human consent.
 - Do not mentally label states without actually doing the work of each state.
 - Do not collapse multiple states into a single step (e.g., "I read the code so I've done research and planning").
 - Do not skip `research` just because the problem seems obvious — at minimum, read the relevant files and record findings.
-- Do not skip `planning` just because the change seems small — at minimum, record what will change and why.
+- Do not skip `planning` just because the change seems small — at minimum, present the design and record the implementation plan.
 - Do not skip `qa` for any reason — every change must be reviewed before completion is declared.

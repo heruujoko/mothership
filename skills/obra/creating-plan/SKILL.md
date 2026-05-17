@@ -5,14 +5,14 @@ description: Bundled dependency skill used by mothership research for structured
 
 # obra/creating-plan
 
-This bundled skill marker exists so mothership can preflight and invoke
-`obra/creating-plan` during research phases.
+This skill name is kept as a compatibility marker for older references.
+Active mothership workflows should use `obra/making-plans` instead.
 
 ## Intended Usage
 
-- structure research recommendations
-- create explicit implementation plans
-- identify ordered execution steps
+- compatibility fallback for environments that still reference `obra/creating-plan`
+- redirect active planning flows to `obra/making-plans`
+- avoid hard failures while older docs are updated
 
 ## Note
 

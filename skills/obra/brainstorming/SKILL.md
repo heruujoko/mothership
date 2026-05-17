@@ -12,7 +12,7 @@ Help turn ideas into fully formed designs and specs through natural collaborativ
 This skill operates in two modes. Determine which mode applies before proceeding:
 
 - **Interactive mode** — You are in a direct conversation with a human user. Follow the full Checklist below.
-- **Research mode** — You are a delegated researcher sub-agent in a mothership workflow. Skip to the Research Mode section below. Do NOT ask clarifying questions iteratively, do NOT offer the visual companion, do NOT write a spec file, and do NOT invoke writing-plans.
+- **Research mode** — You are a delegated researcher sub-agent in a mothership workflow. Skip to the Research Mode section below. Do NOT ask clarifying questions iteratively, do NOT offer the visual companion, do NOT write a spec file, and do NOT invoke `obra/executing-plans`.
 
 If uncertain, check whether you were spawned with a researcher role contract — if so, use research mode.
 
@@ -28,13 +28,13 @@ Use this flow when you are a delegated sub-agent executing mothership's research
 4. **Map approaches** — Identify 2-3 viable approaches. Document trade-offs, risks, and your recommendation with reasoning.
 5. **Validate assumptions** — List assumptions implicit in the task. Flag which are confirmed by codebase evidence and which are unverified.
 6. **Self-review** — Check for contradictions, scope creep, and ambiguity. Fix issues inline.
-7. **Write findings** — Output in the research-execution template format (summary, assumptions, constraints, risks, recommendation, open questions). Write to the research GitHub issue or return to commander.
-8. **Return** — Signal completion to commander. Do NOT invoke writing-plans.
+7. **Structure the handoff** — Invoke `obra/making-plans` to organize findings into a planning-ready recommendation with ordered work, dependencies, and blockers.
+8. **Write findings** — Output in the research-execution template format (summary, assumptions, constraints, risks, recommendation, open questions). Write to the research GitHub issue or return to commander.
+9. **Return** — Signal completion to commander. Do NOT invoke `obra/executing-plans`.
 
 ### Boundaries
 
-- Do NOT write design specs. That is the interactive brainstorming flow.
-- Do NOT invoke writing-plans. That is the commander's planning phase decision.
+- Do NOT write the final user-approved design spec. That belongs to the interactive brainstorming flow.
 - Do NOT ask iterative clarifying questions. Note ambiguities as open questions.
 - Do NOT use the visual companion. No browser or human is available.
 
@@ -62,7 +62,7 @@ You MUST create a task for each of these items and complete them in order:
 6. **Write design doc** — save to `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md` and commit
 7. **Spec self-review** — quick inline check for placeholders, contradictions, ambiguity, scope (see below)
 8. **User reviews written spec** — ask user to review the spec file before proceeding
-9. **Transition to implementation** — invoke writing-plans skill to create implementation plan
+9. **Transition to planning** — invoke `obra/making-plans` to create the implementation plan
 
 ## Process Flow
 
@@ -78,7 +78,7 @@ digraph brainstorming {
     "Write design doc" [shape=box];
     "Spec self-review\n(fix inline)" [shape=box];
     "User reviews spec?" [shape=diamond];
-    "Invoke writing-plans skill" [shape=doublecircle];
+    "Invoke making-plans skill" [shape=doublecircle];
 
     "Explore project context" -> "Visual questions ahead?";
     "Visual questions ahead?" -> "Offer Visual Companion\n(own message, no other content)" [label="yes"];
@@ -92,11 +92,11 @@ digraph brainstorming {
     "Write design doc" -> "Spec self-review\n(fix inline)";
     "Spec self-review\n(fix inline)" -> "User reviews spec?";
     "User reviews spec?" -> "Write design doc" [label="changes requested"];
-    "User reviews spec?" -> "Invoke writing-plans skill" [label="approved"];
+    "User reviews spec?" -> "Invoke making-plans skill" [label="approved"];
 }
 ```
 
-**The terminal state is invoking writing-plans.** Do NOT invoke frontend-design, mcp-builder, or any other implementation skill. The ONLY skill you invoke after brainstorming is writing-plans.
+**The terminal state is invoking `obra/making-plans`.** Do NOT invoke frontend-design, mcp-builder, or any implementation skill directly from brainstorming. The ONLY next planning skill is `obra/making-plans`.
 
 ## The Process
 
@@ -165,8 +165,8 @@ Wait for the user's response. If they request changes, make them and re-run the 
 
 **Implementation:**
 
-- Invoke the writing-plans skill to create a detailed implementation plan
-- Do NOT invoke any other skill. writing-plans is the next step.
+- Invoke `obra/making-plans` to create a detailed implementation plan
+- Do NOT invoke any implementation skill yet. `obra/making-plans` is the next step.
 
 ## Key Principles
 
@@ -194,4 +194,4 @@ A browser-based companion for showing mockups, diagrams, and visual options duri
 A question about a UI topic is not automatically a visual question. "What does personality mean in this context?" is a conceptual question — use the terminal. "Which wizard layout works better?" is a visual question — use the browser.
 
 If they agree to the companion, read the detailed guide before proceeding:
-`skills/brainstorming/visual-companion.md`
+`skills/obra/brainstorming/visual-companion.md`

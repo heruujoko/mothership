@@ -6,16 +6,16 @@ description: >
 
 states:
   intake:
-    purpose: Capture the incoming request and initialize hub state.
+    purpose: Capture the incoming request, initialize hub state, and clarify the problem before research begins.
     allowed_transitions:
       - research
-      - planning
       - blocked
     exit_criteria:
       - Warm-up checklist is executed.
       - "Runtime artifacts are located per `runtime_behavior.artifact_location` setting."
       - "If artifacts are repo-local, `.mothership/` ignore rule is present in `.gitignore`."
       - "Auxiliary skill preflight is recorded from `mothership-config/skill-dependencies.md`."
+      - "`obra/brainstorming` is invoked to restate the task, assumptions, and success criteria."
       - Task summary is recorded in the hub.
       - Initial risk assessment is recorded.
       - Success criteria and obvious dependencies are noted.
@@ -29,9 +29,11 @@ states:
       - blocked
     exit_criteria:
       - "Research sub-agent is invoked using `agents/registry.yaml`."
+      - "Research sub-agent invokes `obra/brainstorming` in research mode."
       - Research sub-agent output or blocker is recorded.
       - Research findings are written to GitHub.
       - Open questions are identified.
+      - "Research findings are structured with `obra/making-plans` into a planning-ready handoff."
       - Risks and constraints are summarized for planning.
       - "Research findings are appended to `.draft/<task-id>/insights.md` if wiki is configured."
 
@@ -42,6 +44,8 @@ states:
       - waiting_for_human
       - blocked
     exit_criteria:
+      - "`obra/brainstorming` is invoked in interactive mode to present the design."
+      - "`obra/making-plans` is invoked and an explicit implementation plan is recorded."
       - Single-agent or multi-agent decision is recorded.
       - Implementation issues are created or updated.
       - Worktree allocation decision is recorded.
@@ -54,6 +58,7 @@ states:
       - blocked
     exit_criteria:
       - "Coder sub-agent is invoked using `agents/registry.yaml`."
+      - "Coder sub-agent invokes `obra/executing-plans` against the approved plan."
       - Coder sub-agent output or blocker is recorded.
       - PR exists or implementation checkpoint is recorded.
       - Relevant implementation notes are written back to GitHub or hub state.

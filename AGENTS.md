@@ -45,7 +45,9 @@ Install with `./install.sh --target <host>`. See `agents/registry.yaml` for per-
 - `skills/qa-review-loop/SKILL.md`
 - `skills/human-escalation/SKILL.md`
 - `skills/obra/superpowers/SKILL.md`
-- `skills/obra/creating-plan/SKILL.md`
+- `skills/obra/brainstorming/SKILL.md`
+- `skills/obra/making-plans/SKILL.md`
+- `skills/obra/executing-plans/SKILL.md`
 - `skills/obra/systematical-debugging/SKILL.md`
 
 ## Intake Warm-Up

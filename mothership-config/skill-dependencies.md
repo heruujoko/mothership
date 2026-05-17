@@ -6,22 +6,24 @@ orchestration proceeds beyond `intake`.
 ## Required Auxiliary Skills
 
 - `obra/superpowers`
-- `obra/creating-plan`
-- `obra/systematical-debugging`
 - `obra/brainstorming`
+- `obra/making-plans`
+- `obra/executing-plans`
+- `obra/systematical-debugging`
 
 These are preinstalled in this repository under:
 - `skills/obra/superpowers/SKILL.md`
-- `skills/obra/creating-plan/SKILL.md`
-- `skills/obra/systematical-debugging/SKILL.md`
 - `skills/obra/brainstorming/SKILL.md`
+- `skills/obra/making-plans/SKILL.md`
+- `skills/obra/executing-plans/SKILL.md`
+- `skills/obra/systematical-debugging/SKILL.md`
 
 ## Phase Mapping
 
-- `intake`: `task-intake-and-decomposition` for scoping
-- `research`: `obra/superpowers` (research-mode brainstorming) and `research-execution`
-- `planning`: `obra/brainstorming` (interactive-mode, if design exploration needed) and `writing-plans`
-- `coding` after QA requested changes: `obra/systematical-debugging`
+- `intake`: `task-intake-and-decomposition` and `obra/brainstorming`
+- `research`: `obra/brainstorming` (research mode), `obra/superpowers`, `obra/making-plans`, and `research-execution`
+- `planning`: `obra/brainstorming` (interactive mode) and `obra/making-plans`
+- `coding`: `obra/executing-plans`; after QA requested changes, also use `obra/systematical-debugging`
 
 ## Commander Rule
 

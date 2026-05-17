@@ -19,10 +19,10 @@ Define how research agents investigate a task before implementation planning.
 
 ## Skill Coordination
 
-During mothership research phase, invoke `obra/superpowers` for context
-expansion and option mapping before writing findings. The superpowers skill
-provides the process for gathering context and comparing approaches; this
-skill defines the output format.
+During mothership research phase, invoke `obra/brainstorming` in research mode
+to explore the task, `obra/superpowers` for context expansion and option
+mapping, and `obra/making-plans` to turn findings into a planning-ready
+handoff before writing findings. This skill defines the output format.
 
 ## Output Template
 

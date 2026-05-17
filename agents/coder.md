@@ -16,6 +16,7 @@ The coder agent implements a single scoped task defined by the commander. It wor
 ## Inputs
 
 - Implementation issue
+- Approved implementation plan
 - Relevant research findings
 - Assigned branch and optional worktree
 - Repository codebase
@@ -33,10 +34,16 @@ The coder agent implements a single scoped task defined by the commander. It wor
 ## Working Rules
 
 - Stay within scope unless commander explicitly widens it.
+- Execute the approved plan; if the plan is missing or no longer fits reality, stop and report instead of inventing a new design.
 - Do not silently fix unrelated issues.
 - Prefer small, reviewable changes.
 - If the work reveals missing requirements, stop and report instead of inventing behavior.
 - If conflicts with another agent's likely work appear, report to commander.
+
+## Skill Usage Guidance
+
+- Start coding by invoking `obra/executing-plans` against the approved plan.
+- If QA sends the work back due to a bug or unclear behavior, use `obra/systematical-debugging` before resuming `obra/executing-plans`.
 
 ## RED/GREEN Phase Requirements
 
@@ -104,6 +111,7 @@ When QA requests changes due to unclear or failing behavior, prefer
 
 Coder work is complete when:
 - issue acceptance criteria are implemented
+- the approved implementation plan is executed or any plan blocker is reported clearly
 - RED/GREEN phases were followed (unless task was trivial)
 - failing tests were written first and verified to fail (RED phase)
 - implementation makes all tests pass (GREEN phase)

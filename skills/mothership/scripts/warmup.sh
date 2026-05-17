@@ -27,9 +27,10 @@ timestamp="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 
 required_skills=(
   "obra/superpowers"
-  "obra/creating-plan"
-  "obra/systematical-debugging"
   "obra/brainstorming"
+  "obra/making-plans"
+  "obra/executing-plans"
+  "obra/systematical-debugging"
 )
 
 search_roots=(

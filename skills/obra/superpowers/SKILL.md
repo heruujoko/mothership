@@ -7,7 +7,8 @@ description: Bundled dependency skill used by mothership research for broad cont
 
 ## Intended Usage During Research
 
-When invoked by a researcher sub-agent during mothership's research phase:
+When invoked by a researcher sub-agent during mothership's research phase, use
+this before `obra/making-plans` packages the handoff:
 
 1. **Context expansion** — Read relevant files, docs, recent commits. Map the
    current state of the codebase related to the task. Understand existing
@@ -42,17 +43,18 @@ Write findings in the research-execution template:
 
 ## Boundaries
 
-- Do NOT write design specs. That is the brainstorming interactive flow.
-- Do NOT invoke writing-plans. That is the commander's planning phase.
+- Do NOT write the final user-approved design spec. That belongs to the
+  brainstorming and planning flow.
 - Do NOT ask iterative clarifying questions. Work with the research issue
   context; note ambiguities as open questions.
 - Do NOT implement code or make workflow decisions reserved for commander.
 
 ## Coordination
 
-During mothership research phase, invoke this skill before writing findings.
-The research-execution skill defines the output format; this skill provides
-the process for gathering context and comparing approaches.
+During mothership research phase, invoke this skill after
+`obra/brainstorming` and before `obra/making-plans`. The research-execution
+skill defines the output format; this skill provides the process for gathering
+context and comparing approaches.
 
 ## Note
 

@@ -46,10 +46,10 @@ shape of the work.
 Mothership helps engineers maintain their work by making the execution model
 visible:
 
-- **Requests become scoped tasks.** Intake captures success criteria, obvious dependencies, and initial risk before anyone starts building.
-- **Research happens before planning.** Assumptions get tested before implementation choices harden.
-- **Planning decides execution shape.** Single-agent vs multi-agent work, worktree use, and issue breakdown are chosen intentionally.
-- **Coding stays scoped.** Coder agents are told to implement the issue, not quietly redesign the roadmap.
+- **Requests become scoped tasks.** Intake uses brainstorming to capture success criteria, obvious dependencies, initial risk, and the first design questions before anyone starts building.
+- **Research happens before planning.** Assumptions get tested with explicit research findings instead of being skipped as "obvious."
+- **Planning decides execution shape.** Brainstorming and explicit plan-making happen before coding starts, so single-agent vs multi-agent work, worktree use, and issue breakdown are chosen intentionally.
+- **Coding stays scoped.** Coder agents are told to execute an approved plan, not quietly redesign the roadmap mid-implementation.
 - **QA is mandatory.** A task does not skip from "code exists" to "complete."
 - **Cleanup closes the loop.** Branches, worktrees, dirty state, and residual artifacts are handled explicitly.
 - **Knowledge compounds across sessions.** Discoveries from research, coding, and QA are captured, verified, and promoted into a persistent wiki that future tasks can read.
@@ -227,7 +227,7 @@ This repository ships with:
 - the installable [`mothership` skill](skills/mothership/SKILL.md) as the manual entrypoint
 - the [`mothership:setup` skill](skills/mothership-setup/SKILL.md) for wiki configuration
 - workflow support docs in `skills/` for intake, risk, parallelization, QA, worktrees, and escalation
-- bundled `obra` skills used during research, planning, and debugging flows
+- bundled `obra` skills for brainstorming, plan making, plan execution, research, and debugging flows
 - focused git/GitHub skills for `commit`, `commit-push`, `create-pr`, and `pr-maintainer`
 
 Mothership is intentionally a manual entrypoint in mixed-skill environments. It
