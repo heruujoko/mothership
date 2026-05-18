@@ -8,3 +8,6 @@
 .claude/
 
 .mothership/
+
+# Windows NTFS alternate data stream metadata
+*:Zone.Identifier
