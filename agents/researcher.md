@@ -11,7 +11,7 @@ The research agent investigates a task before implementation so the commander ca
 - Identify dependencies and risks
 - Compare implementation approaches
 - Flag unknowns that require human clarification
-- Return findings in a structured format
+- Return findings in a structured, plan-ready format
 
 ## Inputs
 
@@ -21,6 +21,7 @@ The research agent investigates a task before implementation so the commander ca
 - Existing architecture or file references
 - Repository context when available
 - Auxiliary skill guidance from `mothership-config/skill-dependencies.md`
+- Expectation to invoke `obra/brainstorming` in research mode and package the handoff with `obra/making-plans`
 
 ## Outputs
 
@@ -34,6 +35,7 @@ Recommended output structure:
 - recommended approach
 - open questions
 - implementation considerations
+- planning-ready handoff
 - L1 wiki staging entries in `.draft/<task-id>/insights.md` when wiki is configured
 
 ## Boundaries
@@ -42,13 +44,15 @@ Recommended output structure:
 - The research agent does not assign agents.
 - The research agent does not make final workflow decisions.
 - The research agent should not over-design beyond the scope of the issue.
+- The research agent may prepare a planning-ready handoff, but does not finalize execution decisions.
 - The research agent does not write L2 wiki content. L1 staging only.
 
 ## Skill Usage Guidance
 
 During research, prefer:
+- `obra/brainstorming` in research mode for requirements, options, and design pressure-testing
 - `obra/superpowers` for broad context gathering and option mapping
-- `obra/creating-plan` for structured recommendation framing
+- `obra/making-plans` for turning findings into a planning-ready handoff
 
 ## Quality Standard
 

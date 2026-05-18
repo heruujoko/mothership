@@ -111,14 +111,14 @@ func makeValidRepo(t *testing.T) string {
 	t.Helper()
 	repoRoot := t.TempDir()
 	mkdirAll(t, filepath.Join(repoRoot, "skills", "commit"))
-	mkdirAll(t, filepath.Join(repoRoot, "skills", "obra", "creating-plan"))
+	mkdirAll(t, filepath.Join(repoRoot, "skills", "obra", "making-plans"))
 	mkdirAll(t, filepath.Join(repoRoot, "skills", ".system", "imagegen"))
 	mkdirAll(t, filepath.Join(repoRoot, "agents"))
 	mkdirAll(t, filepath.Join(repoRoot, "mothership-config"))
 	mkdirAll(t, filepath.Join(repoRoot, ".mothership", "hub"))
 	writeFile(t, filepath.Join(repoRoot, ".mothership", "hub", "README.md"), "hub contract")
 	writeFile(t, filepath.Join(repoRoot, "skills", "commit", "SKILL.md"), "# Commit Skill\nCreate a git commit.")
-	writeFile(t, filepath.Join(repoRoot, "skills", "obra", "creating-plan", "SKILL.md"), "# Creating Plan\nDesign an implementation plan.")
+	writeFile(t, filepath.Join(repoRoot, "skills", "obra", "making-plans", "SKILL.md"), "# Making Plans\nDesign an implementation plan.")
 	writeFile(t, filepath.Join(repoRoot, "skills", ".system", "imagegen", "SKILL.md"), "# Image Gen\nInternal skill.")
 	writeFile(t, filepath.Join(repoRoot, "skills", "risk-assessment.md"), "# Risk Assessment\nAssess project risks.")
 	return repoRoot
@@ -156,7 +156,7 @@ func TestInstallOpenCodeTarget(t *testing.T) {
 	}
 
 	// Nested SKILL.md → nested command
-	cmdPlan := filepath.Join(targetRoot, "commands", "obra", "creating-plan.md")
+	cmdPlan := filepath.Join(targetRoot, "commands", "obra", "making-plans.md")
 	if _, err := os.Stat(cmdPlan); err != nil {
 		t.Fatalf("nested command %s missing: %v", cmdPlan, err)
 	}

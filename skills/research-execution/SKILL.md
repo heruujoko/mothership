@@ -17,6 +17,13 @@ Define how research agents investigate a task before implementation planning.
 - compare implementation options
 - return a concise recommendation
 
+## Skill Coordination
+
+During mothership research phase, invoke `obra/brainstorming` in research mode
+to explore the task, `obra/superpowers` for context expansion and option
+mapping, and `obra/making-plans` to turn findings into a planning-ready
+handoff before writing findings. This skill defines the output format.
+
 ## Output Template
 
 - summary

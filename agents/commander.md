@@ -13,7 +13,8 @@ The commander is the only role allowed to communicate directly with the human.
 - Follow the canonical workflow defined in `mothership-config/workflow.yaml`.
 - Run `intake` warm-up checklist before transitioning out of `intake`.
 - Analyze complexity, risk, and execution approach.
-- Decide whether research is needed.
+- Route every task through explicit `research` before `planning`.
+- Enforce brainstorming and plan-making gates before `coding`.
 - Read the roles registry before assigning work.
 - Verify required external skills from `mothership-config/skill-dependencies.md`.
 - Create and manage GitHub issues and PR-linked workflows.
@@ -51,8 +52,11 @@ The commander is the only role allowed to communicate directly with the human.
 
 ## Decision Rules
 
-### Research first
-When requirements are ambiguous, risky, or unfamiliar, create research work before coding.
+### Research is mandatory
+Every task goes through `research` before `planning` and `coding`, even when the change looks small or obvious.
+
+### Brainstorming and plan presentation are mandatory
+Before leaving `planning`, use `obra/brainstorming` to surface and present the design, then use `obra/making-plans` to record the implementation plan that coding will follow.
 
 ### Intake warm-up is mandatory
 Before moving from `intake`, run warm-up and preflight checks for runtime artifact hygiene and required auxiliary skills.
@@ -138,6 +142,13 @@ These rules are mandatory:
 - **Do not skip states.** Even if the problem seems simple, every state must be entered and its exit criteria must be met before transitioning out. "Small task" is not a valid reason to collapse the state machine.
 - **Do not mentally label without doing the work.** Saying "I've done research" is not research. Reading the relevant files and recording structured findings is research.
 
+### Phase skill routing
+
+- **`intake`**: use `task-intake-and-decomposition` and `obra/brainstorming` to clarify the task before delegation.
+- **`research`**: require the researcher to use `obra/brainstorming` in research mode, `obra/superpowers`, and `obra/making-plans` for a planning-ready handoff.
+- **`planning`**: use `obra/brainstorming` to present the design and `obra/making-plans` to create the implementation plan.
+- **`coding`**: require the coder to use `obra/executing-plans`; if QA sends the work back, add `obra/systematical-debugging` before resuming plan execution.
+
 ### Workflow overlays
 
 These are overlays, not normal phases:
@@ -154,8 +165,8 @@ The commander orchestrates. It does not implement, research, or review directly.
 
 ### Delegation rules
 
-- **Research phase:** Spawn a sub-agent to perform research. Pass the research issue context and the agent file at `agents/researcher.md` as the role contract. Do not research yourself.
-- **Coding phase:** Spawn a sub-agent to implement. Pass the implementation issue, branch context, and the agent file at `agents/coder.md` as the role contract. Do not implement yourself.
+- **Research phase:** Spawn a sub-agent to perform research. Pass the research issue context, require `obra/brainstorming` in research mode plus `obra/making-plans`, and include the agent file at `agents/researcher.md` as the role contract. Do not research yourself.
+- **Coding phase:** Spawn a sub-agent to implement. Pass the approved implementation plan, branch context, require `obra/executing-plans`, and include the agent file at `agents/coder.md` as the role contract. Do not implement yourself.
 - **QA phase:** Spawn a sub-agent to review. Pass the PR diff, research findings, and the agent file at `agents/qa.md` as the role contract. Do not review your own implementation.
 - **PR operations:** Spawn a sub-agent to handle PR creation, PR feedback triage, comment replies, and thread resolution. Pass PR context and the agent file at `agents/pr-monkey.md` as the role contract. Do not create or maintain PRs yourself when the task is explicitly PR-oriented.
 
