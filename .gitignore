@@ -11,3 +11,5 @@
 
 # Windows NTFS alternate data stream metadata
 *:Zone.Identifier
+
+.mothership/
