@@ -71,7 +71,7 @@ func parseFlags(args []string) (config, error) {
 }
 
 func usageErr(err error) error {
-	return fmt.Errorf("%w\n\nUsage: ./install.sh [--target codex|claude|antigravity|opencode] [--mode symlink|copy] [--force]", err)
+	return fmt.Errorf("%w\n\nUsage: ./install.sh [--target codex|claude|antigravity|opencode|pi] [--mode symlink|copy] [--force]", err)
 }
 
 func promptMissing(cfg *config) error {
@@ -259,7 +259,10 @@ func targetRootFor(target string) string {
 	case "opencode":
 		return resolveOpenCodeDir()
 	case "pi":
-		return filepath.Join(os.Getenv("HOME"), ".pi", "agent")
+		if root := os.Getenv("PI_HOME"); root != "" {
+			return root
+		}
+		return filepath.Join(os.Getenv("HOME"), ".agents")
 	default:
 		return ""
 	}
