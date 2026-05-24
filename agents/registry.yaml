@@ -22,6 +22,9 @@ roles:
     pi:
       tool: mothership_spawn
       role: researcher
+      team_path_enabled: true
+      team_tool: team
+      team: research
 
   coder:
     delegated: true
@@ -36,6 +39,11 @@ roles:
     pi:
       tool: mothership_spawn
       role: coder
+      team_path_enabled: true
+      team_tool: team
+      team: implementation
+      model_hint: ""
+      model_fallback_chain: ""
 
   qa:
     delegated: true
@@ -50,6 +58,9 @@ roles:
     pi:
       tool: mothership_spawn
       role: qa
+      team_path_enabled: true
+      team_tool: team
+      team: review
 
   pr_monkey:
     delegated: true
@@ -64,3 +75,6 @@ roles:
     pi:
       tool: mothership_spawn
       role: pr_monkey
+      team_path_enabled: true
+      team_tool: team
+      team: default

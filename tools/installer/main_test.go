@@ -210,6 +210,103 @@ func TestVerifyOpenCodeStructure(t *testing.T) {
 	})
 }
 
+func TestInstallPiTarget(t *testing.T) {
+	repoRoot := makeValidRepo(t)
+	// Create the extension source file the installer expects
+	mkdirAll(t, filepath.Join(repoRoot, "skills", "mothership", "extensions"))
+	writeFile(t, filepath.Join(repoRoot, "skills", "mothership", "extensions", "subagent.ts"),
+		"// mothership_spawn extension")
+	writeFile(t, filepath.Join(repoRoot, "skills", "mothership", "extensions", "pi-routing.js"),
+		"// routing dependency")
+
+	piHome := filepath.Join(t.TempDir(), ".agents")
+	t.Setenv("PI_HOME", piHome)
+
+	cfg := config{
+		RepoRoot: repoRoot,
+		Target:   "pi",
+		Mode:     "copy",
+	}
+
+	if err := install(cfg); err != nil {
+		t.Fatalf("install() error = %v", err)
+	}
+
+	// Standard dirs installed
+	for _, rel := range []string{"skills", "agents", "mothership-config"} {
+		p := filepath.Join(piHome, rel)
+		if info, err := os.Stat(p); err != nil || !info.IsDir() {
+			t.Fatalf("expected directory %s, got err=%v isDir=%v", p, err, info != nil && info.IsDir())
+		}
+	}
+
+	// Hub contract created
+	hubReadme := filepath.Join(piHome, ".mothership", "hub", "README.md")
+	if data, err := os.ReadFile(hubReadme); err != nil {
+		t.Fatalf("hub contract %s missing: %v", hubReadme, err)
+	} else if string(data) != "hub contract" {
+		t.Fatalf("hub contract %s has wrong content: %s", hubReadme, string(data))
+	}
+
+	// Extension files copied to target
+	subagentFile := filepath.Join(piHome, "extensions", "subagent.ts")
+	if data, err := os.ReadFile(subagentFile); err != nil {
+		t.Fatalf("extension %s missing: %v", subagentFile, err)
+	} else if !strings.Contains(string(data), "mothership_spawn") {
+		t.Fatalf("extension %s has wrong content: %s", subagentFile, string(data))
+	}
+
+	routingFile := filepath.Join(piHome, "extensions", "pi-routing.js")
+	if data, err := os.ReadFile(routingFile); err != nil {
+		t.Fatalf("extension %s missing: %v", routingFile, err)
+	} else if !strings.Contains(string(data), "routing dependency") {
+		t.Fatalf("extension %s has wrong content: %s", routingFile, string(data))
+	}
+}
+
+func TestInstallPiTargetDefaultPath(t *testing.T) {
+	repoRoot := makeValidRepo(t)
+	mkdirAll(t, filepath.Join(repoRoot, "skills", "mothership", "extensions"))
+	writeFile(t, filepath.Join(repoRoot, "skills", "mothership", "extensions", "subagent.ts"),
+		"// extension")
+	writeFile(t, filepath.Join(repoRoot, "skills", "mothership", "extensions", "pi-routing.js"),
+		"// extension routing")
+
+	// Clear PI_HOME to test default resolution
+	t.Setenv("PI_HOME", "")
+
+	cfg := config{
+		RepoRoot: repoRoot,
+		Target:   "pi",
+		Mode:     "copy",
+	}
+
+	// targetRootFor should return ~/.agents when PI_HOME is empty
+	targetRoot := targetRootFor("pi")
+	wantDefault := filepath.Join(os.Getenv("HOME"), ".agents")
+	if targetRoot != wantDefault {
+		t.Fatalf("targetRootFor(pi) = %q, want %q", targetRoot, wantDefault)
+	}
+
+	// Install to an isolated temp dir to avoid polluting real home
+	isolated := filepath.Join(t.TempDir(), ".agents")
+	t.Setenv("PI_HOME", isolated)
+
+	if err := install(cfg); err != nil {
+		t.Fatalf("install() error = %v", err)
+	}
+
+	// Verify extensions landed at the correct path
+	subagentFile := filepath.Join(isolated, "extensions", "subagent.ts")
+	if _, err := os.Stat(subagentFile); err != nil {
+		t.Fatalf("extension %s missing after install: %v", subagentFile, err)
+	}
+	routingFile := filepath.Join(isolated, "extensions", "pi-routing.js")
+	if _, err := os.Stat(routingFile); err != nil {
+		t.Fatalf("extension %s missing after install: %v", routingFile, err)
+	}
+}
+
 func TestResolveOpenCodeDir(t *testing.T) {
 	t.Run("OPENCODE_HOME takes priority", func(t *testing.T) {
 		custom := filepath.Join(t.TempDir(), "custom-opencode")

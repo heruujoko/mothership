@@ -25,7 +25,43 @@ Run this checklist immediately when `mothership` is invoked:
 5. Ensure `agents/registry.yaml` and `skills/mothership/subagent-protocol.md` are available.
 6. If preflight fails, record a `blocked` overlay or explicit fallback notes before continuing.
 7. If `.mothership/wiki.yaml` exists, read `projects/<name>/index.md` from the configured wiki root for project context.
-8. On pi: verify the `mothership_spawn` extension is available under `~/.pi/agent/extensions/`. If absent, delegation will not work — record a `blocked` overlay and continue without sub-agent spawning.
+8. On pi: verify the `mothership_spawn` extension is available under `$PI_HOME/extensions/` (default `~/.agents/extensions/`). If absent, delegation will not work — record a `blocked` overlay and continue without sub-agent spawning.
+
+## Pi Setup Prerequisites
+
+Before using mothership with Pi, ensure the following prerequisites are met:
+
+1. **Install target is `~/.agents`.** The canonical Pi install root is `~/.agents` to
+   avoid conflicts with Codex (which uses `~/.codex`). The installer sets
+   `PI_HOME=~/.agents` so Pi resolves extensions from `$PI_HOME/extensions/`.
+
+2. **Install pi-crew.** Mothership team-first routing requires pi-crew:
+   ```bash
+   pi install npm:pi-crew
+   ```
+
+3. **Install required extensions** (idempotent, safe to re-run):
+   ```bash
+   pi-crew pi install npm:pi-powerline-footer
+   pi-crew pi install npm:@juicesharp/rpiv-todo
+   ```
+
+4. **Run the mothership installer for Pi:**
+   ```bash
+   ./install.sh --target pi --mode copy
+   ```
+   This copies skills, agents, config, and the `mothership_spawn` extension to
+   `$PI_HOME/` (default `~/.agents/`).
+
+5. **Verify the extension resolves:**
+   ```bash
+   ls $PI_HOME/extensions/subagent.ts
+   ls $PI_HOME/extensions/pi-routing.js
+   ```
+   If the file is absent, delegation will not work.
+
+6. **Secure config guidance:** Do not commit secrets or API keys to agent config
+   files. Use user-scope config only (`$PI_HOME/` is user-local).
 
 ## Purpose
 
@@ -166,6 +202,7 @@ For Codex:
 For Pi:
 
 - Use `mothership_spawn` with the `role` and `task` arguments declared in `agents/registry.yaml` under the `pi` host.
+- `mothership_spawn` is team-first: it calls the configured `team` tool directly when available (`team_path_enabled`, mapped `team`, optional `model_hint`/`model_fallback_chain`). By default `team_tool` must be exactly `team` unless explicitly sanctioned (`team_tool_allow_unsafe: true`), otherwise it falls back to legacy subprocess spawning with explicit reason logging.
 - See `skills/mothership/subagent-protocol.md` for the full Pi delegation protocol.
 
 The commander may gather minimal routing context in `intake` and `planning`.

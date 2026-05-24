@@ -246,7 +246,7 @@ It requires a local `go` toolchain.
 
 The script asks two questions:
 
-1. install target: `codex`, `claude`, or `antigravity`
+1. install target: `codex`, `claude`, `antigravity`, `opencode`, or `pi`
 2. install mode: `symlink` or `copy`
 
 Installed package contents:
@@ -261,6 +261,8 @@ Target roots:
 - `codex` -> `${CODEX_HOME:-~/.codex}`
 - `claude` -> `~/.claude`
 - `antigravity` -> `~/.antigravity`
+- `opencode` -> `${OPENCODE_HOME:-~/.config/opencode}`
+- `pi` -> `${PI_HOME:-~/.agents}`
 
 Why the hub contract is copied instead of symlinked:
 
@@ -268,12 +270,40 @@ Why the hub contract is copied instead of symlinked:
 - copying `.mothership/hub/README.md` keeps the contract available without
   writing runtime state back into this repository.
 
+### Pi Setup
+
+Pi uses `~/.agents` as its install root (not `~/.pi`) to avoid conflicts with
+Codex. The `PI_HOME` environment variable overrides this.
+
+Prerequisites:
+
+```bash
+# 1. Install pi-crew (required for team-first routing)
+pi install npm:pi-crew
+
+# 2. Install required extensions (idempotent)
+pi-crew pi install npm:pi-powerline-footer
+pi-crew pi install npm:@juicesharp/rpiv-todo
+
+# 3. Run the mothership installer
+./install.sh --target pi --mode copy
+```
+
+The installer copies skills, agents, config, the hub contract, and Pi runtime
+extension files to `$PI_HOME/`. Verify:
+
+```bash
+ls $PI_HOME/extensions/subagent.ts
+ls $PI_HOME/extensions/pi-routing.js
+```
+
 Non-interactive examples:
 
 ```bash
 ./install.sh --target claude --mode symlink
 ./install.sh --target codex --mode copy
 ./install.sh --target antigravity --mode symlink --force
+./install.sh --target pi --mode copy
 ```
 
 ## Using It

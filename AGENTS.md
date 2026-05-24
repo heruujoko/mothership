@@ -11,7 +11,7 @@ This repository is an installable mothership package for Codex, Claude, and Pi a
 
 - **Claude Code** — uses built-in `Agent` tool for delegation
 - **Codex** — uses built-in `spawn_agent` for delegation
-- **Pi** — uses `mothership_spawn` extension tool (requires `skills/mothership/extensions/subagent.ts` installed under `~/.agents/extensions/`). Set `PI_HOME` env var to override the install root.
+- **Pi** — uses `mothership_spawn` extension tool (requires `skills/mothership/extensions/subagent.ts` and `skills/mothership/extensions/pi-routing.js` installed under `~/.agents/extensions/`). The extension prefers direct `team` tool delegation when configured/available, otherwise falls back to legacy subprocess spawning with explicit reason logging. Set `PI_HOME` env var to override the install root.
 
 Install with `./install.sh --target <host>`. See `agents/registry.yaml` for per-host role mappings.
 
