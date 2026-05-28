@@ -6,7 +6,8 @@ if [ "${1:-}" = "--force" ]; then
   force=1
 fi
 
-repo_root="$(pwd)"
+script_dir="$(cd "$(dirname "$0")" && pwd)"
+repo_root="$(cd "${script_dir}/../../.." && pwd)"
 policy_file="${repo_root}/mothership-config/model-policy.yaml"
 
 if [ -f "${policy_file}" ] && [ "${force}" -ne 1 ]; then
