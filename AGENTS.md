@@ -19,6 +19,7 @@ Install with `./install.sh --target <host>`. See `agents/registry.yaml` for per-
 
 - Roles registry: `mothership-config/roles.md`
 - Workflow state machine: `mothership-config/workflow.yaml`
+- Model policy: `mothership-config/model-policy.yaml` (fallback: warn + legacy model inheritance)
 - Hub contract: `.mothership/hub/README.md`
 - Skill dependencies: `mothership-config/skill-dependencies.md`
 
@@ -49,8 +50,10 @@ Install with `./install.sh --target <host>`. See `agents/registry.yaml` for per-
 - `skills/obra/making-plans/SKILL.md`
 - `skills/obra/executing-plans/SKILL.md`
 - `skills/obra/systematical-debugging/SKILL.md`
+- `skills/model-policy-setup/SKILL.md`
 
 ## Intake Warm-Up
 
 - Run `skills/mothership/scripts/warmup.sh` during `intake`.
+- Warm-up validates `model-policy.yaml` shape when present; missing/invalid policy warns and falls back to legacy model inheritance.
 - Keep runtime artifacts under `.mothership/` and ignored by git.

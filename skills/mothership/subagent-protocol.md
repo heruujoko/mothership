@@ -46,6 +46,18 @@ Delegated states map to roles as follows:
 
 `planning`, `complete`, and `cleanup` remain commander-owned states.
 
+## Model Resolution
+
+Before spawning a delegated role, resolve model selection with `mothership-config/model-policy.yaml`:
+
+1. explicit per-invocation override (if provided)
+2. `risk_overrides` (if task risk is known)
+3. `role_tiers` mapping for delegated role
+4. host tier default using `host_aliases` + `host_models`/`tiers`
+5. fallback: current thread model (legacy inheritance)
+
+If policy is missing or invalid, warn and continue with fallback instead of hard-failing.
+
 ## Prompt Assembly
 
 When spawning a sub-agent, construct the prompt from these parts in order:
@@ -172,7 +184,7 @@ its output to commander. Commander waits for completion before transitioning.
   warmup checklist.
 - The subprocess inherits the pi working directory. File paths in the context
   must be absolute or relative to the working directory.
-- The subprocess uses the same model unless overridden in the extension config.
+- Model should follow policy resolution first; if policy is missing/invalid, subprocess inherits the current thread model unless overridden in extension config.
 
 ## State Gates
 

@@ -12,6 +12,8 @@ dependencies_file="${repo_root}/mothership-config/skill-dependencies.md"
 gitignore_file="${repo_root}/.gitignore"
 registry_file="${repo_root}/agents/registry.yaml"
 subagent_protocol_file="${repo_root}/skills/mothership/subagent-protocol.md"
+model_policy_file="${repo_root}/mothership-config/model-policy.yaml"
+model_policy_validator="${repo_root}/skills/mothership/scripts/validate-model-policy.sh"
 
 mkdir -p "${runtime_dir}" "${preflight_dir}" "${runtime_dir}/sessions" "${hub_checkpoints_dir}" "${hub_refs_dir}"
 
@@ -101,6 +103,28 @@ fi
   echo "- runtime_dir: \`${runtime_dir}\`"
   echo "- gitignore_rule: \`.mothership/\`"
   echo "- dependencies_file_present: $([ -f "${dependencies_file}" ] && echo "yes" || echo "no")"
+} >> "${report_file}"
+
+{
+  echo
+  echo "## Model Policy"
+  if [ ! -f "${model_policy_file}" ]; then
+    echo "- status: missing"
+    echo "- fallback: legacy inheritance (current thread model)"
+  elif [ ! -x "${model_policy_validator}" ]; then
+    echo "- status: validator_missing_or_not_executable"
+    echo "- fallback: legacy inheritance (current thread model)"
+  else
+    set +e
+    validator_output="$(ALLOW_MISSING_POLICY=1 WARN_ONLY_POLICY=1 "${model_policy_validator}" "${repo_root}" 2>&1)"
+    validator_status=$?
+    set -e
+    echo "- validator_exit: ${validator_status}"
+    echo "- validator_output: |"
+    while IFS= read -r line; do
+      echo "  ${line}"
+    done <<< "${validator_output}"
+  fi
 } >> "${report_file}"
 
 total_missing=$((missing_count + missing_contract_count))

@@ -226,6 +226,7 @@ This repository ships with:
 
 - the installable [`mothership` skill](skills/mothership/SKILL.md) as the manual entrypoint
 - the [`mothership:setup` skill](skills/mothership-setup/SKILL.md) for wiki configuration
+- the [`model-policy-setup` skill](skills/model-policy-setup/SKILL.md) to bootstrap `mothership-config/model-policy.yaml`
 - workflow support docs in `skills/` for intake, risk, parallelization, QA, worktrees, and escalation
 - bundled `obra` skills for brainstorming, plan making, plan execution, research, and debugging flows
 - focused git/GitHub skills for `commit`, `commit-push`, `create-pr`, and `pr-maintainer`
@@ -285,9 +286,11 @@ High-level flow:
 
 1. Start with `mothership`.
 2. Run the intake warm-up from `skills/mothership/scripts/warmup.sh`.
+   - Warm-up warns (does not hard-fail) when `mothership-config/model-policy.yaml` is missing or invalid, and falls back to legacy model inheritance.
 3. Read the canonical config:
    - `mothership-config/workflow.yaml`
    - `mothership-config/roles.md`
+   - `mothership-config/model-policy.yaml`
    - `agents/registry.yaml`
    - `mothership-config/skill-dependencies.md`
    - `skills/mothership/subagent-protocol.md`
