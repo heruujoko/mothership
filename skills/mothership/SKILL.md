@@ -23,9 +23,10 @@ Run this checklist immediately when `mothership` is invoked:
 3. Ensure `.mothership/` is present in `.gitignore`.
 4. Ensure required auxiliary skills are available per `mothership-config/skill-dependencies.md`.
 5. Ensure `agents/registry.yaml` and `skills/mothership/subagent-protocol.md` are available.
-6. If preflight fails, record a `blocked` overlay or explicit fallback notes before continuing.
-7. If `.mothership/wiki.yaml` exists, read `projects/<name>/index.md` from the configured wiki root for project context.
-8. On pi: verify the `mothership_spawn` extension is available under `$PI_HOME/extensions/` (default `~/.agents/extensions/`). If absent, delegation will not work — record a `blocked` overlay and continue without sub-agent spawning.
+6. If `mothership-config/model-policy.yaml` is missing, run `skills/model-policy-setup/scripts/setup-model-policy.sh` to bootstrap it. Inform the user they should edit the `host_models` section to match their available models.
+7. If preflight fails, record a `blocked` overlay or explicit fallback notes before continuing.
+8. If `.mothership/wiki.yaml` exists, read `projects/<name>/index.md` from the configured wiki root for project context.
+9. On pi: verify the `mothership_spawn` extension is available under `$PI_HOME/extensions/` (default `~/.agents/extensions/`). If absent, delegation will not work — record a `blocked` overlay and continue without sub-agent spawning.
 
 ## Pi Setup Prerequisites
 
@@ -62,6 +63,61 @@ Before using mothership with Pi, ensure the following prerequisites are met:
 
 6. **Secure config guidance:** Do not commit secrets or API keys to agent config
    files. Use user-scope config only (`$PI_HOME/` is user-local).
+
+## Model Policy Configuration
+
+Mothership routes models per role and risk level through `mothership-config/model-policy.yaml`.
+
+### First-time setup
+
+If the file is missing, bootstrap defaults:
+```bash
+skills/model-policy-setup/scripts/setup-model-policy.sh
+```
+This is non-destructive — it skips if the file already exists.
+
+### Where to edit models for your crews
+
+Edit `mothership-config/model-policy.yaml`:
+
+```yaml
+# Which model each host uses for each tier
+host_models:
+  pi:                          # <-- YOUR HOST
+    high: "openai-codex/gpt-5.5"    # <-- commander, researcher
+    medium: "openai-codex/gpt-5.3-codex"  # <-- coder, qa
+    low: "openai-codex/gpt-5-mini"   # <-- pr_monkey, low-risk downgrade
+
+# Which tier each role defaults to
+role_tiers:
+  commander: high     # change to "medium" to downgrade planning
+  researcher: high
+  coder: medium       # change to "high" for complex implementation
+  qa: medium
+  pr_monkey: low
+
+# Risk-based overrides (applied before role_tiers)
+risk_overrides:
+  low:
+    coder: low        # low-risk coding uses cheap model
+    qa: low
+  high:
+    coder: high       # high-risk coding uses best model
+    researcher: high
+```
+
+Key sections:
+- **`host_models.<host>`** — map tier names to actual model IDs your provider supports
+- **`role_tiers`** — change which tier a role uses by default
+- **`risk_overrides`** — upgrade or downgrade based on task risk assessment
+- **`fallback`** — what happens when policy is missing or invalid (default: warn + inherit current thread model)
+
+Resolution order: explicit_override → risk_override → role_tier → host_tier_default → inherit_current_thread_model
+
+After editing, validate:
+```bash
+skills/mothership/scripts/validate-model-policy.sh
+```
 
 ## Purpose
 
