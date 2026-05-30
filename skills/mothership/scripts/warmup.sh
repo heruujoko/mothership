@@ -21,7 +21,7 @@ if [ ! -f "${gitignore_file}" ]; then
   touch "${gitignore_file}"
 fi
 
-if ! rg -n '^\.mothership/$' "${gitignore_file}" >/dev/null 2>&1; then
+if ! grep -q '^\.mothership/$' "${gitignore_file}" 2>/dev/null; then
   printf "\n.mothership/\n" >> "${gitignore_file}"
 fi
 

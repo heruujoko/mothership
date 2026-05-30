@@ -10,15 +10,19 @@ warn() {
   echo "model-policy: WARN: $*" >&2
 }
 
+# Extract a top-level YAML section (indented block between two top-level keys).
+# Uses only awk — no dependency on rg.
 section_block() {
   local section="$1"
   awk -v section="${section}" '
     $0 ~ "^"section":$" { flag=1; next }
     flag && $0 ~ "^[A-Za-z_][A-Za-z0-9_]*:" { exit }
+    flag && $0 ~ "^$" { next }
     flag { print }
   ' "${policy_file}"
 }
 
+# Extract a nested (2-space indented) block from a parent section.
 nested_block() {
   local parent_block="$1"
   local key="$2"
@@ -27,6 +31,19 @@ nested_block() {
     flag && $0 ~ "^  [a-zA-Z0-9_-]+:$" { exit }
     flag { print }
   ' <<< "${parent_block}"
+}
+
+# Portable grep check: matches a regex in a string or file.
+# Uses grep -E (POSIX) instead of rg.
+match_line() {
+  local pattern="$1"
+  shift
+  if [ $# -eq 0 ]; then
+    # stdin
+    grep -qE "${pattern}" && return 0 || return 1
+  else
+    grep -qE "${pattern}" "$@" && return 0 || return 1
+  fi
 }
 
 if [ ! -f "${policy_file}" ]; then
@@ -40,7 +57,7 @@ fi
 valid=1
 
 for key in version fallback host_aliases role_tiers risk_overrides host_models tiers; do
-  if ! rg -n "^${key}:" "${policy_file}" >/dev/null 2>&1; then
+  if ! match_line "^${key}:" "${policy_file}"; then
     warn "missing top-level key: ${key}"
     valid=0
   fi
@@ -53,7 +70,7 @@ if [ -z "${host_aliases_block}" ]; then
   valid=0
 else
   for host in claude codex pi hermes; do
-    if ! rg -n "^  ${host}:" <<< "${host_aliases_block}" >/dev/null 2>&1; then
+    if ! match_line "^  ${host}:" <<< "${host_aliases_block}"; then
       warn "host alias missing: ${host}"
       valid=0
     fi
@@ -67,7 +84,7 @@ if [ -z "${role_tiers_block}" ]; then
   valid=0
 else
   for role in commander researcher coder qa pr_monkey; do
-    if ! rg -n "^  ${role}:" <<< "${role_tiers_block}" >/dev/null 2>&1; then
+    if ! match_line "^  ${role}:" <<< "${role_tiers_block}"; then
       warn "role_tiers missing role: ${role}"
       valid=0
     fi
@@ -81,7 +98,7 @@ if [ -z "${risk_overrides_block}" ]; then
   valid=0
 else
   for risk in low medium high; do
-    if ! rg -n "^  ${risk}:" <<< "${risk_overrides_block}" >/dev/null 2>&1; then
+    if ! match_line "^  ${risk}:" <<< "${risk_overrides_block}"; then
       warn "risk_overrides missing bucket: ${risk}"
       valid=0
     fi
@@ -104,7 +121,7 @@ else
     fi
 
     for tier in high medium low; do
-      if ! rg -n "^    ${tier}:" <<< "${host_block}" >/dev/null 2>&1; then
+      if ! match_line "^    ${tier}:" <<< "${host_block}"; then
         warn "host_models.${host} missing tier: ${tier}"
         valid=0
       fi
