@@ -12,6 +12,7 @@ import type { Message } from "@mariozechner/pi-ai";
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { Text } from "@mariozechner/pi-tui";
 import { Type } from "typebox";
+import { buildTeamInvocation, decidePiRoute } from "./pi-routing.js";
 
 const VALID_ROLES = new Set(["researcher", "coder", "qa", "pr_monkey"]);
 
@@ -39,6 +40,50 @@ function getFinalOutput(messages: Message[]): string {
 		}
 	}
 	return "";
+}
+
+function parsePiRoleConfigFromRegistry(registryPath: string, role: string): { pi: Record<string, any> } {
+	if (!fs.existsSync(registryPath)) return { pi: {} };
+	const content = fs.readFileSync(registryPath, "utf8");
+	const roleRegex = new RegExp(`\\n\\s{2}${role}:([\\s\\S]*?)(?=\\n\\s{2}[a-z_]+:|$)`);
+	const roleMatch = content.match(roleRegex);
+	if (!roleMatch) return { pi: {} };
+	const block = roleMatch[1];
+	const piMatch = block.match(/\n\s{4}pi:([\s\S]*?)(?=\n\s{4}[a-z_]+:|\n\s{2}[a-z_]+:|$)/);
+	if (!piMatch) return { pi: {} };
+	const piBlock = piMatch[1];
+	const pi: Record<string, any> = {};
+	for (const rawLine of piBlock.split("\n")) {
+		const line = rawLine.trim();
+		if (!line || line.startsWith("#")) continue;
+		const idx = line.indexOf(":");
+		if (idx <= 0) continue;
+		const key = line.slice(0, idx).trim();
+		let value: any = line.slice(idx + 1).trim();
+		if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+			value = value.slice(1, -1);
+		}
+		if (value === "true") value = true;
+		else if (value === "false") value = false;
+		pi[key] = value;
+	}
+	return { pi };
+}
+
+function getAvailableToolNames(ctx: any): string[] {
+	const names = new Set<string>();
+	const candidates = [ctx?.tools, ctx?.runtime?.tools, ctx?.availableTools];
+	for (const c of candidates) {
+		if (Array.isArray(c)) {
+			for (const t of c) {
+				if (typeof t === "string") names.add(t);
+				else if (t?.name) names.add(t.name);
+			}
+		} else if (c && typeof c === "object") {
+			for (const key of Object.keys(c)) names.add(key);
+		}
+	}
+	return [...names];
 }
 
 async function runPiSubprocess(
@@ -229,6 +274,42 @@ export default function (pi: ExtensionAPI) {
 			}
 
 			try {
+				const registryPath = path.join(ctx.cwd, "agents", "registry.yaml");
+				const roleConfig = parsePiRoleConfigFromRegistry(registryPath, role);
+				const route = decidePiRoute({ role, config: roleConfig, availableTools: getAvailableToolNames(ctx as any) });
+
+				if (route.path === "team") {
+					const payload = buildTeamInvocation({
+						teamName: route.teamName,
+						task: enrichedTask,
+						modelHint: route.modelHint,
+						modelFallbackChain: route.modelFallbackChain,
+					});
+					const callTool = (ctx as any)?.callTool || (ctx as any)?.executeTool || (pi as any)?.callTool;
+					if (typeof callTool === "function") {
+						try {
+							const teamResult = await callTool(route.teamTool, payload, signal);
+							if (teamResult?.isError) {
+								console.warn(`[mothership_spawn] fallback=legacy reason=team_tool_unhealthy tool=${route.teamTool} role=${role}`);
+							} else {
+								const output = Array.isArray(teamResult?.content)
+									? teamResult.content.map((c: any) => c?.text || "").join("\n").trim()
+									: "";
+								return {
+									content: [{ type: "text", text: output || "(no output)" }],
+									details: { role, route: "team", team: route.teamName, team_tool: route.teamTool, model_hint: route.modelHint, model_fallback_chain: route.modelFallbackChain },
+								};
+							}
+						} catch {
+							console.warn(`[mothership_spawn] fallback=legacy reason=team_tool_unhealthy tool=${route.teamTool} role=${role}`);
+						}
+					} else {
+						console.warn(`[mothership_spawn] fallback=legacy reason=team_tool_unavailable tool=${route.teamTool} role=${role}`);
+					}
+				} else {
+					console.warn(`[mothership_spawn] fallback=legacy reason=${route.reason} role=${role}`);
+				}
+
 				const result = await runPiSubprocess(
 					contractFile,
 					enrichedTask,
