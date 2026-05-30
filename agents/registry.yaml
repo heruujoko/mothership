@@ -67,7 +67,7 @@ roles:
 
   pr_monkey:
     delegated: true
-    contract_file: agents/pr-monkey.md
+    contract_file: agents/pr_monkey.md
     claude:
       tool: Agent
       subagent_type: general-purpose

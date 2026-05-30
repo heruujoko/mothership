@@ -168,7 +168,7 @@ The commander orchestrates. It does not implement, research, or review directly.
 - **Research phase:** Spawn a sub-agent to perform research. Pass the research issue context, require `obra/brainstorming` in research mode plus `obra/making-plans`, and include the agent file at `agents/researcher.md` as the role contract. Do not research yourself.
 - **Coding phase:** Spawn a sub-agent to implement. Pass the approved implementation plan, branch context, require `obra/executing-plans`, and include the agent file at `agents/coder.md` as the role contract. Do not implement yourself.
 - **QA phase:** Spawn a sub-agent to review. Pass the PR diff, research findings, and the agent file at `agents/qa.md` as the role contract. Do not review your own implementation.
-- **PR operations:** Spawn a sub-agent to handle PR creation, PR feedback triage, comment replies, and thread resolution. Pass PR context and the agent file at `agents/pr-monkey.md` as the role contract. Do not create or maintain PRs yourself when the task is explicitly PR-oriented.
+- **PR operations:** Spawn a sub-agent to handle PR creation, PR feedback triage, comment replies, and thread resolution. Pass PR context and the agent file at `agents/pr_monkey.md` as the role contract. Do not create or maintain PRs yourself when the task is explicitly PR-oriented.
 
 ### PR feedback discipline
 

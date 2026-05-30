@@ -8,12 +8,15 @@ hub_dir="${runtime_dir}/hub"
 hub_checkpoints_dir="${hub_dir}/checkpoints"
 hub_refs_dir="${hub_dir}/refs"
 report_file="${preflight_dir}/skills-status.md"
+agents_report_file="${preflight_dir}/agents-status.md"
 dependencies_file="${repo_root}/mothership-config/skill-dependencies.md"
 gitignore_file="${repo_root}/.gitignore"
 registry_file="${repo_root}/agents/registry.yaml"
 subagent_protocol_file="${repo_root}/skills/mothership/subagent-protocol.md"
 model_policy_file="${repo_root}/mothership-config/model-policy.yaml"
 model_policy_validator="${repo_root}/skills/mothership/scripts/validate-model-policy.sh"
+
+PI_HOME="${PI_HOME:-${HOME}/.agents}"
 
 mkdir -p "${runtime_dir}" "${preflight_dir}" "${runtime_dir}/sessions" "${hub_checkpoints_dir}" "${hub_refs_dir}"
 
@@ -127,11 +130,73 @@ fi
   fi
 } >> "${report_file}"
 
+# --- Design Gap 1: Agent contracts preflight check ---
+agent_contracts_dir="${repo_root}/agents"
+user_agent_contracts_dir="${PI_HOME}/agents"
+
+# Extract role keys from registry (lines indented with exactly 2 spaces, ending with colon)
+registry_roles=""
+if [ -f "${registry_file}" ]; then
+  registry_roles=$(grep -E '^  [a-z_]+:' "${registry_file}" | sed 's/^  //;s/:.*//' | tr '\n' ' ')
+fi
+
+agent_missing_count=0
+
+# Write agents-status report
+{
+  echo "# Mothership Agent Contracts Preflight"
+  echo
+  echo "- generated_at: ${timestamp}"
+  echo "- registry_file: \`${registry_file}\`"
+  echo "- repo_contracts_dir: \`${agent_contracts_dir}\`"
+  echo "- user_scope_contracts_dir: \`${user_agent_contracts_dir}\`"
+  echo
+  echo "## Per-Role Contract Status"
+} > "${agents_report_file}"
+
+if [ -z "${registry_roles}" ]; then
+  echo "- registry: no roles found (registry missing or empty)" >> "${agents_report_file}"
+  agent_missing_count=1
+else
+  for role in ${registry_roles}; do
+    # Skip commander — non-delegated
+    if [ "${role}" = "commander" ]; then
+      echo "- \`${role}\`: non-delegated role (no contract needed)" >> "${agents_report_file}"
+      continue
+    fi
+
+    contract_name="${role}.md"
+    repo_contract="${agent_contracts_dir}/${contract_name}"
+    user_contract="${user_agent_contracts_dir}/${contract_name}"
+
+    if [ -f "${repo_contract}" ]; then
+      echo "- \`${role}\`: ok (repo-local: ${repo_contract})" >> "${agents_report_file}"
+    elif [ -f "${user_contract}" ]; then
+      echo "- \`${role}\`: ok (user-scope: ${user_contract})" >> "${agents_report_file}"
+    else
+      echo "- \`${role}\`: MISSING — tried repo-local (\`${repo_contract}\`) and user-scope (\`${user_contract}\`)" >> "${agents_report_file}"
+      agent_missing_count=$((agent_missing_count + 1))
+    fi
+  done
+
+  # Summary line
+  echo "" >> "${agents_report_file}"
+  if [ "${agent_missing_count}" -eq 0 ]; then
+    echo "**Result:** All agent contracts accessible." >> "${agents_report_file}"
+  else
+    echo "**Result:** ${agent_missing_count} contract(s) missing. Run \`./install.sh --target pi\` to install user-scope contracts." >> "${agents_report_file}"
+  fi
+fi
+
+missing_contract_count=$((missing_contract_count + agent_missing_count))
+# --- End agent contracts preflight ---
+
 total_missing=$((missing_count + missing_contract_count))
 
 if [ "${total_missing}" -gt 0 ]; then
-  echo "warmup: completed with missing dependencies (${total_missing}). see ${report_file}" >&2
+  echo "warmup: completed with missing dependencies (${total_missing}). see ${report_file}, ${agents_report_file}" >&2
   exit 2
 fi
 
 echo "warmup: completed. report: ${report_file}"
+echo "warmup: agents report: ${agents_report_file}"

@@ -273,7 +273,7 @@ Examples of prohibited drift:
 ### PR work uses PR monkey
 
 When the user provides a PR, asks to create a PR from the current project, or
-asks to process PR review feedback, commander should spawn `agents/pr-monkey.md`
+asks to process PR review feedback, commander should spawn `agents/pr_monkey.md`
 for the PR-facing work using the host mapping from `agents/registry.yaml`.
 
 PR monkey is responsible for:

@@ -35,7 +35,7 @@ Install with `./install.sh --target <host>`. See `agents/registry.yaml` for per-
 - `agents/researcher.md`
 - `agents/coder.md`
 - `agents/qa.md`
-- `agents/pr-monkey.md`
+- `agents/pr_monkey.md`
 
 ## Supporting Skills
 
