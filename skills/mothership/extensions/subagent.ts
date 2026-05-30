@@ -102,7 +102,9 @@ function getFinalOutput(messages: Message[]): string {
 }
 
 /**
- * Parse role config from registry.yaml using YAML-like regex parsing.
+ * Parse role config from registry.yaml using section-scoped extraction.
+ * First isolates the `roles:` block, then extracts the specific role entry
+ * within that block to avoid cross-section false positives.
  * Also extracts the `contract_file` field for Design Gap 3 resolution.
  */
 function parseRoleConfigFromRegistry(
@@ -114,8 +116,15 @@ function parseRoleConfigFromRegistry(
 	if (!fs.existsSync(registryPath)) return result;
 
 	const content = fs.readFileSync(registryPath, "utf8");
-	const roleRegex = new RegExp(`\\n\\s{2}${role}:([\\s\\S]*?)(?=\\n\\s{2}[a-z_]+:|$)`);
-	const roleMatch = content.match(roleRegex);
+
+	// Extract the `roles:` top-level section first, then search within it.
+	// This avoids matching role names that appear in other sections.
+	const rolesSection = extractYamlSection(content, "roles");
+	if (!rolesSection) return result;
+
+	// Within the roles section, find the specific role entry (indented 2 spaces).
+	const roleRegex = new RegExp(`\\n\\s{2}${role}:([\\s\\S]*?)(?=\\n\\s{2}[a-z_]\\w*:|$)`);
+	const roleMatch = rolesSection.match(roleRegex);
 	if (!roleMatch) return result;
 
 	const block = roleMatch[1];
@@ -126,8 +135,8 @@ function parseRoleConfigFromRegistry(
 		result.contract_file = cfMatch[1].trim().replace(/^["']|["']$/g, "");
 	}
 
-	// Extract pi: block
-	const piMatch = block.match(/\n\s{4}pi:([\s\S]*?)(?=\n\s{4}[a-z_]+:|\n\s{2}[a-z_]+:|$)/);
+	// Extract pi: block (4-space indented within the role)
+	const piMatch = block.match(/\n\s{4}pi:([\s\S]*?)(?=\n\s{4}[a-z_]\w*:|$)/);
 	if (!piMatch) return result;
 
 	const piBlock = piMatch[1];
@@ -150,6 +159,19 @@ function parseRoleConfigFromRegistry(
 	return result;
 }
 
+/**
+ * Extract a YAML top-level section by key (e.g., "roles", "host_models").
+ * Returns the content from the key line to the next top-level key or end-of-file.
+ * Lines where the key appears nested under other keys are ignored.
+ */
+function extractYamlSection(content: string, sectionKey: string): string | null {
+	// Match a top-level key (no leading whitespace) followed by ":"
+	// Capture everything until the next top-level key or end of string.
+	const regex = new RegExp(`^${sectionKey}:([\\s\\S]*?)(?=^[a-z_]\\w*:|\\z)`, "m");
+	const match = content.match(regex);
+	return match ? match[0] : null;
+}
+
 function getAvailableToolNames(ctx: any): string[] {
 	const names = new Set<string>();
 	const candidates = [ctx?.tools, ctx?.runtime?.tools, ctx?.availableTools];
@@ -160,7 +182,15 @@ function getAvailableToolNames(ctx: any): string[] {
 				else if (t?.name) names.add(t.name);
 			}
 		} else if (c && typeof c === "object") {
-			for (const key of Object.keys(c)) names.add(key);
+			for (const key of Object.keys(c)) {
+				// Only include keys whose value is callable (function) or is an
+				// object with callable shape — filters out prototype noise,
+				// string metadata keys, and non-tool object properties.
+				const val = c[key];
+				if (typeof val === "function" || (val && typeof val === "object")) {
+					names.add(key);
+				}
+			}
 		}
 	}
 	return [...names];

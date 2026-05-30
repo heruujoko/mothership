@@ -1,4 +1,8 @@
 version: 1
+# IMPORTANT: Indentation must remain consistent. The Pi runtime extension
+# (subagent.ts) parses this file using section-scoped regex extraction, not a
+# full YAML parser. Do not reformat indentation levels, use block scalars,
+# or add YAML anchors/aliases without updating the parser.
 description: >
   Host-specific delegation registry for mothership roles. Role contracts remain
   in `agents/*.md`. This file tells a host runtime which sub-agent tool flavor
