@@ -1,69 +1,67 @@
 # Local Hub State
 
-The local hub is the operational memory of mothership. It is the live communication center for commander and spawned agents.
+The local hub is the operational memory of mothership. It lives under `.mothership/hub/`
+and is gitignored (runtime agent context only).
 
-GitHub remains the durable external record for important checkpoints.
+## Design
 
-## Purpose
-
-The hub should make it possible for commander to answer:
-- what task is active?
-- which agents are assigned?
-- what issues and PRs exist?
-- what is blocked?
-- what is waiting on human input?
-- what cleanup remains?
-
-## Format
-
-The hub uses a compact state file plus externalized references for verbose data:
+**Single file, no external refs.** All state — core fields, phase data, agent
+status, decisions — lives in one YAML file. There are no separate `refs/` files,
+checkpoint logs, or format duplicates. One read loads everything the commander
+needs. One write saves everything.
 
 ```
-.mothership/
-  hub/
-    state.json          # Compact state machine state (always loaded)
-    refs/               # Externalized verbose data (loaded on demand)
-      intake.md         # Task summary, risk, success criteria
-      research.md       # Research findings (or GitHub issue URL)
-      planning.md       # Execution decisions
-      coding.md         # Implementation summary (or PR URL)
-      qa.md             # QA disposition (or GitHub review URL)
-    checkpoints/        # State transition log
-      001-intake.json
-      002-research.json
-      ...
+.mothership/hub/
+  state.yaml    # Single source of truth — all state, all phase data
+  README.md     # This file (mirrored from mothership-config/hub-contract.md)
 ```
 
-### state.json
+### state.yaml
 
-Compact state machine state (~200-300 tokens). Short keys, references instead of inline content.
+```yaml
+v: 1
+task: T-20260516-001
+state: coding
+prev: planning
+entered: 2026-05-16T14:32:00Z
+overlay: null
+risk: medium
+gh:
+  issue: "#42"
+  pr: "#43"
+agents:
+  coder: active
+wt: main
+summary: Short task description
 
-```json
-{
-  "v": 1,
-  "task": "T-20260516-001",
-  "state": "coding",
-  "prev": "planning",
-  "entered": "2026-05-16T14:32:00Z",
-  "overlay": null,
-  "risk": "medium",
-  "gh": {
-    "issue": "#42",
-    "pr": "#43"
-  },
-  "agents": {
-    "coder": "general-purpose"
-  },
-  "wt": "main",
-  "refs": {
-    "intake": "refs/intake.md",
-    "research": "https://github.com/.../issues/44",
-    "planning": "refs/planning.md"
-  }
-}
+# --- phase data (inlined per transition) ---
+intake:
+  success: |
+    - Criteria items
+    - One per line
+  warmup: preflight completed
+research:
+  summary: Key findings in one line
+  constraints:
+    - Pi-only
+    - Claude/Codex unchanged
+  recommendations:
+    - Update registries
+planning:
+  execution: single-agent
+  rationale: Tightly coupled scope
+  worktree: none
+  scope:
+    - Itemized plan steps
+coding:
+  implemented: |
+    - What was done
+    - Files changed summary
+  verified: verification methods used
+  branch: feature-branch
 ```
 
-### Required Fields (hub contract)
+### Required Fields
 
 | Key | Type | Description |
 |-----|------|-------------|
@@ -80,77 +78,53 @@ Compact state machine state (~200-300 tokens). Short keys, references instead of
 |-----|------|-------------|
 | `risk` | enum | `low`, `medium`, `high`, `critical` |
 | `gh` | object | GitHub references: `issue`, `pr` |
-| `agents` | object | Role → agent_type map for active assignments |
+| `agents` | object | Role → status/agent_type map |
 | `wt` | string | Current branch/worktree name |
-| `refs` | object | Paths to verbose data in `refs/` or GitHub URLs |
+| `summary` | string | One-line task summary |
+| `intake` | object | Success criteria, warmup, risk notes |
+| `research` | object | Findings, constraints, recommendations |
+| `planning` | object | Execution shape, scope, rationale |
+| `coding` | object | Implementation summary, files, verification |
 
 ### Overlay Object (only present when active)
 
-```json
-{
-  "overlay": {
-    "type": "blocked",
-    "reason": "gh CLI not installed",
-    "since": "2026-05-16T15:00:00Z",
-    "unblock": "Install gh and authenticate"
-  }
-}
+```yaml
+overlay:
+  type: blocked
+  reason: gh CLI not installed
+  since: 2026-05-16T15:00:00Z
+  unblock: Install gh and authenticate
 ```
 
 Overlay types:
 - `blocked` — requires `type`, `reason`, `since`, `unblock`
 - `reconstructed` — requires `type`, `source`, `notes`
 
-### Externalized Data (refs/)
+## State Transitions
 
-Verbose data lives in `refs/` files or GitHub, referenced by path/URL in state.json:
+Each transition updates `state`, `prev`, `entered`, and appends or replaces the
+phase section for the new state. Prior phase sections are preserved for context.
 
-| Ref File | Content |
-|----------|---------|
-| `refs/intake.md` | Task summary, risk assessment, success criteria, warmup results, skill preflight |
-| `refs/research.md` | Research findings, open questions, risks/constraints |
-| `refs/planning.md` | Single/multi-agent decision, decomposition strategy, worktree decision |
-| `refs/coding.md` | Implementation notes, files changed, verification performed |
-| `refs/qa.md` | QA findings by severity, disposition, required changes |
-
-### Checkpoints
-
-Individual JSON files in `checkpoints/` record each state transition for audit trail and reconstruction:
-
-```json
-{
-  "seq": 1,
-  "from": "intake",
-  "to": "research",
-  "at": "2026-05-16T14:30:00Z",
-  "notes": "Research sub-agent spawned"
-}
-```
+History is implicit: `state` → `prev` gives the current direction. For deeper
+history, inspect GitHub artifacts (issues, PRs, commits).
 
 ## Reliability Rule
 
-If the hub file is incomplete, inconsistent, or corrupted:
-1. commander should inspect GitHub artifacts and `refs/` files
-2. commander should reconstruct the missing state from checkpoints
-3. commander should mark the hub as reconstructed (overlay)
-4. commander should continue only after the reconstructed state is coherent enough
+If `state.yaml` is missing, incomplete, or corrupted:
+1. Commander should inspect GitHub artifacts
+2. Commander should reconstruct the missing state
+3. Commander should mark the hub as reconstructed (overlay)
+4. Commander should continue only after the reconstructed state is coherent enough
 
 ## Persistence Rule
 
-The hub is for live orchestration, not silent reasoning. Important decisions must also be reflected in GitHub artifacts so the workflow remains auditable.
-
-## Startup Hygiene Rule
-
-Commander should execute a warm-up routine during `intake` that:
-1. creates runtime artifacts under `.mothership/`
-2. enforces `.mothership/` in `.gitignore`
-3. records auxiliary skill preflight status for required external skills
+The hub is for live orchestration, not silent reasoning. Important decisions
+must also be reflected in GitHub artifacts so the workflow remains auditable.
 
 ## Token Budget
 
 | Component | Tokens |
 |-----------|--------|
-| state.json (core fields) | ~200-300 |
-| Per checkpoint | ~50-100 |
-| refs/ files | loaded on demand, not in every context |
-| **Total per transition** | **~200-400** (vs ~3000-6500 with inline verbose data) |
+| state.yaml (core fields) | ~200-300 |
+| state.yaml (all phase data) | ~400-800 |
+| **Total per session** | **~400-800** (was ~3000-6500 with refs) |
