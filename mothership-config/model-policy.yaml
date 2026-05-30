@@ -17,6 +17,7 @@ host_aliases:
   codex: codex
   pi: pi
   hermes: hermes
+  ollama: ollama
 
 # Default tier by role.
 # Goal: high-model planning/research, medium/low implementation.
@@ -45,9 +46,9 @@ host_models:
     medium: "claude-sonnet-4"
     low: "claude-haiku-3.5"
   codex:
-    high: "gpt-5.5"
-    medium: "gpt-5.3-codex"
-    low: "gpt-5-mini"
+    high: "codex/gpt-5.5"
+    medium: "codex/gpt-5.3-codex"
+    low: "codex/gpt-5-mini"
   pi:
     high: "openai-codex/gpt-5.5"
     medium: "openai-codex/gpt-5.3-codex"
@@ -56,6 +57,10 @@ host_models:
     high: ""
     medium: ""
     low: ""
+  ollama:
+    high: "codex/gpt-5.5"
+    medium: "ollama/deepseek-v4-flash"
+    low: "ollama/kimi-k2.6"
 
 tiers:
   high:

@@ -265,13 +265,7 @@ Target roots:
 - `opencode` -> `${OPENCODE_HOME:-~/.config/opencode}`
 - `pi` -> `${PI_HOME:-~/.agents}`
 
-Why the hub contract is copied instead of symlinked:
-
-- `.mothership/` is used for local runtime artifacts.
-- copying `.mothership/hub/README.md` keeps the contract available without
-  writing runtime state back into this repository.
-
-### Pi Setup
+### Pi Setup (with team-first routing)
 
 Pi uses `~/.agents` as its install root (not `~/.pi`) to avoid conflicts with
 Codex. The `PI_HOME` environment variable overrides this.
@@ -298,6 +292,25 @@ ls $PI_HOME/extensions/subagent.ts
 ls $PI_HOME/extensions/pi-routing.js
 ```
 
+**Verifying installation:** After installation, confirm the expected directory structure:
+
+```bash
+# Verify the target directory contains expected content
+ls -R $PI_HOME | grep -E '^(skills|agents|mothership-config)'
+
+# For Pi specifically, check that extensions are installed
+if [ -d "$PI_HOME/extensions" ]; then
+  ls $PI_HOME/extensions/*.ts $PI_HOME/extensions/*.js 2>/dev/null || echo "Extensions directory missing"
+fi
+```
+
+**Team-first delegation:** When Pi-crew is installed, mothership automatically
+uses the `team` tool for role delegation. This enables:
+- model routing via `mothership-config/model-policy.yaml` (role tiers + host models)
+- consistent runtime state across sessions
+- reduced subprocess overhead
+- fallback to legacy subprocess spawning if `team` is unavailable
+
 Non-interactive examples:
 
 ```bash
@@ -306,6 +319,71 @@ Non-interactive examples:
 ./install.sh --target antigravity --mode symlink --force
 ./install.sh --target pi --mode copy
 ```
+
+## Configuration
+
+After installation, configure model routing (required for Pi team-first routing):
+
+```bash
+# Initialize model-policy.yaml (if not auto-created by warmup)
+skills/model-policy-setup/scripts/setup-model-policy.sh
+
+# Edit the configuration
+vim mothership-config/model-policy.yaml
+```
+
+### Model Policy Configuration
+
+The [model-policy.yaml](mothership-config/model-policy.yaml) file controls:
+
+- **host aliases**: Map local host names to supported targets (`claude`, `codex`, `pi`, `hermes`)
+- **role tiers**: Assign model tiers per role (`commander`, `researcher`, `coder`, `qa`, `pr_monkey`)
+- **risk overrides**: Adjust tier selection based on task risk (`low`/`medium`/`high`)
+- **host models**: Define available models per host and tier
+- **fallback behavior**: How to handle missing/invalid config
+
+#### Example Configuration
+
+```yaml
+# mothership-config/model-policy.yaml
+
+# Host aliases - map local host names to supported targets
+host_aliases:
+  claude: claude
+  codex: codex
+  pi: pi
+  hermes: hermes
+
+# Role tiers - map each role to a model tier
+tiers:
+  commander: high
+  researcher: medium
+  coder: medium
+  qa: low
+  pr_monkey: low
+
+# Risk overrides - adjust tier based on task risk
+risk:
+  low: low
+  medium: medium
+  high: high
+
+# Host models - available models per host and tier
+host_models:
+  pi:
+    high: ["claude-3-5-sonnet-latest", "claude-3-5-haiku-latest"]
+    medium: ["claude-3-5-sonnet-latest", "claude-3-5-haiku-latest"]
+    low: ["claude-3-5-haiku-latest"]
+  codex:
+    high: ["claude-3-5-sonnet-latest"]
+    medium: ["claude-3-5-haiku-latest"]
+    low: ["claude-3-5-haiku-latest"]
+```
+
+Model resolution order:
+1. Role tier + risk override from this file
+2. Host-specific model mapping in `agents/registry.yaml`
+3. Fallback: inherit from current session model
 
 ## Using It
 
