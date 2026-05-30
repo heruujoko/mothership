@@ -220,17 +220,19 @@ Before leaving a delegated state, commander must have evidence that:
 - the delegated sub-agent was actually invoked for that state
 - the delegated sub-agent returned a result or blocker
 - the result was recorded to `refs/<state>.md` and GitHub, with only a
-  reference stored in `state.json`
+  reference stored inline in `state.yaml` under the relevant phase section
 
 This is especially strict for `qa`: commander cannot mark QA complete based on
 its own ad hoc verification after a coder returns.
 
-## Hub State Externalization
+## Hub State Embedding
 
-Sub-agent output must NOT be embedded inline in `state.json`. Instead:
+Sub-agent output is embedded directly in `state.yaml` under the phase key
+(e.g., `research:`, `coding:`). There are no separate ref files — the entire
+session state is one file.
 
-1. Write the full structured output to `refs/<state>.md` (e.g., `refs/research.md`, `refs/coding.md`, `refs/qa.md`)
-2. Create or update the corresponding GitHub artifact (issue comment, PR description)
-3. Store only the reference path or GitHub URL in `state.json.refs`
+1. Write the output inline to `state.yaml` under the appropriate phase section
+2. Reference important GitHub artifacts (issue comment, PR description) in the
+   phase section if needed for durability
 
-This keeps `state.json` compact (~200-300 tokens) regardless of sub-agent output size.
+This keeps the full session state in one read (~400-800 tokens).

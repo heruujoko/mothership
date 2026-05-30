@@ -5,8 +5,6 @@ repo_root="$(pwd)"
 runtime_dir="${repo_root}/.mothership"
 preflight_dir="${runtime_dir}/preflight"
 hub_dir="${runtime_dir}/hub"
-hub_checkpoints_dir="${hub_dir}/checkpoints"
-hub_refs_dir="${hub_dir}/refs"
 report_file="${preflight_dir}/skills-status.md"
 agents_report_file="${preflight_dir}/agents-status.md"
 dependencies_file="${repo_root}/mothership-config/skill-dependencies.md"
@@ -18,7 +16,7 @@ model_policy_validator="${repo_root}/skills/mothership/scripts/validate-model-po
 
 PI_HOME="${PI_HOME:-${HOME}/.agents}"
 
-mkdir -p "${runtime_dir}" "${preflight_dir}" "${runtime_dir}/sessions" "${hub_checkpoints_dir}" "${hub_refs_dir}"
+mkdir -p "${runtime_dir}" "${preflight_dir}" "${runtime_dir}/sessions"
 
 if [ ! -f "${gitignore_file}" ]; then
   touch "${gitignore_file}"

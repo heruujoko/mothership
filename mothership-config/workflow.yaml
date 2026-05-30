@@ -192,5 +192,5 @@ hub_contract:
     description: >
       Verbose data (research findings, implementation details, QA dispositions)
       must be written to refs/ files or GitHub artifacts. Only references
-      (paths or URLs) are stored in state.json. See .mothership/hub/README.md
+      are stored inline in state.yaml under the relevant phase section. See .mothership/hub/README.md
       for the full format specification.
