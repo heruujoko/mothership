@@ -317,12 +317,32 @@ are silently skipped.
 Required auxiliary skills are listed in
 [mothership-config/skill-dependencies.md](mothership-config/skill-dependencies.md).
 
+## Documentation Sync
+
+Feature-bearing pull requests that merge to `main` are followed by an automated
+documentation sync check. The workflow in
+[`.github/workflows/documentation-sync.yml`](.github/workflows/documentation-sync.yml)
+runs [`scripts/sync_documentation.py`](scripts/sync_documentation.py), updates
+[`docs/features.md`](docs/features.md) when feature changelogs, descriptions,
+or usage help are missing, and opens a follow-up documentation pull request for
+maintainer review.
+
+Feature PRs should include `Feature changelog`, `Feature description`, and
+`Usage help` sections in their PR body so the generated documentation PR is
+complete instead of placeholder-based. See
+[`docs/documentation-sync.md`](docs/documentation-sync.md) for the exact
+workflow and supported PR body markers.
+
 ## Repository Layout
 
 - `agents/`: role contracts for commander, researcher, coder, QA, and PR monkey
 - `agents/registry.yaml`: host-specific mapping from mothership roles to the sub-agent tool flavor
 - `mothership-config/`: canonical workflow, roles registry, skill dependencies, and wiki schema
 - `skills/`: installable skills plus supporting workflow guidance
+- `docs/features.md`: generated and reviewed feature changelog, descriptions, and usage help
+- `docs/documentation-sync.md`: documentation sync workflow and PR body authoring guide
+- `scripts/sync_documentation.py`: deterministic documentation sync generator used by GitHub Actions
+- `.github/workflows/documentation-sync.yml`: post-merge workflow that opens documentation follow-up PRs
 - `skills/mothership/wiki-protocol.md`: wiki role permissions, quality gate, and promotion process
 - `skills/mothership-setup/SKILL.md`: wiki setup skill (invoked as `/mothership:setup`)
 - `skills/mothership/scripts/wiki-setup.sh`: wiki initialization script

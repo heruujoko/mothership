@@ -1,0 +1,126 @@
+name: Documentation Sync
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request number to document
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync-documentation:
+    name: Sync feature documentation
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main')
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Resolve pull request metadata
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_PR_NUMBER: ${{ github.event.pull_request.number }}
+          INPUT_PR_NUMBER: ${{ inputs.pr_number }}
+        run: |
+          set -euo pipefail
+
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            pr_number="$INPUT_PR_NUMBER"
+          else
+            pr_number="$EVENT_PR_NUMBER"
+          fi
+
+          gh pr view "$pr_number" \
+            --json number,title,url,body,mergeCommit,mergedAt,files \
+            > pr.json
+
+          jq -r '.files[].path' pr.json > changed-paths.txt
+          jq -r '.body // ""' pr.json > pr-body.md
+          {
+            echo "number=$(jq -r '.number' pr.json)"
+            echo "title=$(jq -r '.title' pr.json)"
+            echo "url=$(jq -r '.url' pr.json)"
+            echo "merge_sha=$(jq -r '.mergeCommit.oid // empty' pr.json)"
+            echo "merged_at=$(jq -r '.mergedAt // empty' pr.json)"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Generate documentation updates
+        env:
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          PR_TITLE: ${{ steps.pr.outputs.title }}
+          PR_URL: ${{ steps.pr.outputs.url }}
+          MERGE_SHA: ${{ steps.pr.outputs.merge_sha }}
+          MERGED_AT: ${{ steps.pr.outputs.merged_at }}
+        run: |
+          set -euo pipefail
+
+          args=(
+            --pr-number "$PR_NUMBER"
+            --pr-title "$PR_TITLE"
+            --pr-url "$PR_URL"
+            --merge-sha "$MERGE_SHA"
+            --merged-at "$MERGED_AT"
+          )
+
+          while IFS= read -r path; do
+            [ -n "$path" ] && args+=(--changed-path "$path")
+          done < changed-paths.txt
+
+          python3 scripts/sync_documentation.py "${args[@]}" --pr-body-file pr-body.md
+
+      - name: Stop if documentation is already synced
+        id: diff
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- docs/features.md; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open documentation sync pull request
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          PR_TITLE: ${{ steps.pr.outputs.title }}
+        run: |
+          set -euo pipefail
+
+          branch="docs/sync-pr-${PR_NUMBER}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$branch"
+          git add docs/features.md
+          git commit -m "docs: sync feature documentation for #${PR_NUMBER}"
+          git push --force-with-lease origin "$branch"
+
+          if gh pr view "$branch" --json number >/dev/null 2>&1; then
+            gh pr edit "$branch" \
+              --title "docs: sync feature documentation for #${PR_NUMBER}" \
+              --body "Updates feature changelog, feature description, and usage help for merged PR #${PR_NUMBER}: ${PR_TITLE}."
+          else
+            gh pr create \
+              --base main \
+              --head "$branch" \
+              --title "docs: sync feature documentation for #${PR_NUMBER}" \
+              --body "Updates feature changelog, feature description, and usage help for merged PR #${PR_NUMBER}: ${PR_TITLE}."
+          fi
