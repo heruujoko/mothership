@@ -172,6 +172,34 @@ function extractYamlSection(content: string, sectionKey: string): string | null 
 	return match ? match[0] : null;
 }
 
+/**
+ * Extract a simple value from a YAML section (e.g., role_tiers.commander -> "high").
+ * Uses section-scoped extraction to avoid cross-section false positives.
+ */
+function extractYamlValue(content: string, sectionKey: string, key: string): string | null {
+	const section = extractYamlSection(content, sectionKey);
+	if (!section) return null;
+	const regex = new RegExp(`^\\s{2}${key}:\\s*(.+)$`, "m");
+	const match = section.match(regex);
+	if (!match) return null;
+	return match[1].trim().replace(/^["']|["']$/g, "");
+}
+
+/**
+ * Extract a nested value from a YAML section (e.g., host_models.pi.high -> "model-name").
+ */
+function extractNestedYamlValue(content: string, sectionKey: string, parentKey: string, childKey: string): string | null {
+	const section = extractYamlSection(content, sectionKey);
+	if (!section) return null;
+	const parentRegex = new RegExp(`^\\s{2}${parentKey}:([\\s\\S]*?)(?=^\\s{2}[a-z_]\\w*:|$)`, "m");
+	const parentMatch = section.match(parentRegex);
+	if (!parentMatch) return null;
+	const childRegex = new RegExp(`^\\s{4}${childKey}:\\s*(.+)$`, "m");
+	const childMatch = parentMatch[1].match(childRegex);
+	if (!childMatch) return null;
+	return childMatch[1].trim().replace(/^["']|["']$/g, "");
+}
+
 function getAvailableToolNames(ctx: any): string[] {
 	const names = new Set<string>();
 	const candidates = [ctx?.tools, ctx?.runtime?.tools, ctx?.availableTools];
@@ -406,17 +434,39 @@ export default function (pi: ExtensionAPI) {
 				// If registry specifies a contract_file, prefer that as primary contract path
 				// (with same fallback logic). This solves Bug 2 (pr-monkey vs pr_monkey) since
 				// the registry can point to whatever filename exists.
+				// Note: contract_file paths are relative to the repo root, not the registry directory.
 				let effectiveContractFile = contractFile;
 				if (roleConfig.contract_file) {
 					const registryContractFile = path.isAbsolute(roleConfig.contract_file)
 						? roleConfig.contract_file
-						: path.resolve(path.dirname(registryPath), roleConfig.contract_file);
+						: path.resolve(cwd, roleConfig.contract_file);
 					if (fs.existsSync(registryContractFile)) {
 						effectiveContractFile = registryContractFile;
 					}
 				}
 
 				const route = decidePiRoute({ role, config: roleConfig, availableTools: getAvailableToolNames(ctx as any) });
+
+				// --- Model policy resolution: load model-policy.yaml when registry model_hint is empty ---
+				if (route.path === "team" && !route.modelHint) {
+					const policyPath = path.join(cwd, "mothership-config", "model-policy.yaml");
+					if (fs.existsSync(policyPath)) {
+						try {
+							const policyContent = fs.readFileSync(policyPath, "utf8");
+							const roleTier = extractYamlValue(policyContent, "role_tiers", role);
+							if (roleTier) {
+								const hostKey = "pi"; // This extension is Pi-only
+								const modelForTier = extractNestedYamlValue(policyContent, "host_models", hostKey, roleTier);
+								if (modelForTier) {
+									route.modelHint = modelForTier;
+								}
+							}
+						} catch (e) {
+							// Policy load failed — continue with empty model hint (legacy fallback)
+							console.warn(`[mothership_spawn] model-policy load failed: ${(e as Error).message}`);
+						}
+					}
+				}
 
 				// --- Bug 3 guard: Detect known pi-crew CLI flag issues ---
 				// The `--exclude-tools` flag is unsupported on some pi CLI versions.

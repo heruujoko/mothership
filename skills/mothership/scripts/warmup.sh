@@ -163,7 +163,23 @@ else
       continue
     fi
 
+    # Honor registry contract_file if specified (e.g., agents/pr_monkey.md)
     contract_name="${role}.md"
+    if [ -f "${registry_file}" ]; then
+      # Extract contract_file for this role from registry using awk section-scoped extraction
+      registry_cf=$(awk -v role="${role}" '
+        /^roles:/{ in_roles=1; next }
+        /^[a-z_]+:/{ in_roles=0 }
+        in_roles && $0 ~ "^  " role ":" { in_role=1; next }
+        in_role && $0 ~ "^    contract_file:" {
+          sub(/^ *contract_file: */, ""); gsub(/["'"'"']/, ""); print; exit
+        }
+        in_role && $0 ~ "^  [a-z_]+:" { in_role=0 }
+      ' "${registry_file}")
+      if [ -n "${registry_cf}" ]; then
+        contract_name="$(basename "${registry_cf}")"
+      fi
+    fi
     repo_contract="${agent_contracts_dir}/${contract_name}"
     user_contract="${user_agent_contracts_dir}/${contract_name}"
 

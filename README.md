@@ -355,15 +355,15 @@ host_aliases:
   hermes: hermes
 
 # Role tiers - map each role to a model tier
-tiers:
+role_tiers:
   commander: high
-  researcher: medium
+  researcher: high
   coder: medium
-  qa: low
+  qa: medium
   pr_monkey: low
 
 # Risk overrides - adjust tier based on task risk
-risk:
+risk_overrides:
   low: low
   medium: medium
   high: high
@@ -381,8 +381,9 @@ host_models:
 ```
 
 Model resolution order:
-1. Role tier + risk override from this file
-2. Host-specific model mapping in `agents/registry.yaml`
+1. Role tier from `role_tiers` + risk override from `risk_overrides` in this file
+2. Host-specific model mapping in `host_models`
+3. Fallback: inherit current thread model (legacy behavior)
 3. Fallback: inherit from current session model
 
 ## Using It
