@@ -143,12 +143,21 @@ Before promoting an L1 item to L2, the commander:
 
 ### Cleanup Command: `kb stale`
 
-Add a command `mothership kb stale` that:
+A script `skills/mothership/scripts/kb-stale.sh` implements the stale page scanner:
 
-1. Scans all pages under `projects/<name>/insights/` and `projects/<name>/decisions/`.
-2. Reads the `freshness` field from each page's metadata header.
-3. Lists pages where freshness is older than `stale_threshold_days`.
-4. Reports: page path, freshness date, days since last update.
+1. Parses `.mothership/wiki.yaml` via `python3` YAML (safe, handles comments/varied indentation).
+2. Scans all pages under `projects/<name>/insights/` and `projects/<name>/decisions/`.
+3. Reads the `freshness` field from each page's metadata header.
+4. Lists pages where freshness is older than `stale_threshold_days` (default: 90).
+5. Also lists pages older than `archive_after_days` (default: 120) for archival.
+6. Reports: page path, freshness date, days since last update.
+
+**Usage:**
+```bash
+bash skills/mothership/scripts/kb-stale.sh
+```
+
+The same logic also runs automatically during `intake` as part of `warmup.sh`.
 
 ### Archival (not deletion)
 

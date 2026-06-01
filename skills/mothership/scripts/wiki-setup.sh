@@ -36,33 +36,35 @@ if [ ! -f "${schema_file}" ]; then
   else
     cat > "${schema_file}" <<'SCHEMA'
 # Wiki Schema
-#
-# This file defines conventions for reading and writing the mothership wiki.
-#
-# ## Writing Rules
-#
-# - Insights pages use `## <topic>` sections within a single file
-# - Decisions use one file per decision with frontmatter
-# - Every L2 claim must cite a source: `> Source: PR #N (url)`
-# - Use `[[wikilinks]]` for cross-references between pages
-# - Append to existing pages, do not create new files for existing topics
-# - Every wiki page MUST include a YAML metadata header with:
-#   - sources (issue/PR/commit URLs)
-#   - confidence (draft|observed|inferred|verified|deprecated)
-#   - freshness (date last verified)
-#   - tags (categorical keywords)
-#
-# ## Metadata Template
-#
-# Every new wiki page should be prepended with:
-# ---
-# sources: []
-# confidence: draft
-# freshness: $(date +%Y-%m-%d)
-# tags: []
-# ---
-#
-# ## L1 to L2 Promotion Rules
+
+This file defines conventions for reading and writing the mothership wiki.
+
+## Writing Rules
+
+- Insights pages use `## <topic>` sections within a single file
+- Decisions use one file per decision with frontmatter
+- Every L2 claim must cite a source: `> Source: PR #N (url)`
+- Use `[[wikilinks]]` for cross-references between pages
+- Append to existing pages, do not create new files for existing topics
+- Every wiki page MUST include a YAML metadata header with:
+  - sources (issue/PR/commit URLs)
+  - confidence (draft|observed|inferred|verified|deprecated)
+  - freshness (date last verified)
+  - tags (categorical keywords)
+
+## Metadata Template
+
+Every new wiki page should be prepended with:
+```
+---
+sources: []
+confidence: draft
+freshness: $(date +%Y-%m-%d)
+tags: []
+---
+```
+
+## L1 to L2 Promotion Rules
 
 - An item must have at least one citation to promote
 - Contradictions with existing L2 content are flagged, not silently overwritten
