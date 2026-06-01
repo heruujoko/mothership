@@ -4,6 +4,73 @@ description: >
   normal task lifecycle, allowed state transitions, and non-phase overlays
   used for recovery and interruption handling.
 
+profiles:
+  quick:
+    description: "Tiny fix, documentation-only change, cosmetic update, or single-line config adjustment."
+    detection_hints:
+      - "Likely touches one file or one tightly scoped documentation/config area."
+      - "Purely cosmetic/content changes with no persistence, auth, crypto, or infrastructure boundary."
+    phase_behavior:
+      intake: "Select and record the profile, success criteria, risk, and why deeper ceremony is unnecessary."
+      research: "skip_or_minimal; record the reason research is unnecessary or capture a short file/context note."
+      planning: "concise; record a short implementation checklist instead of a full design narrative."
+      coding: "auto; one coder path unless the host workflow has an explicit reason to split."
+      qa: "light; run relevant focused checks or human-verifiable review, but never skip QA entirely."
+    pr_required: false
+    model_policy:
+      default_risk: low
+      tier_hint: low_to_medium
+
+  standard:
+    description: "Normal feature, bugfix, or multi-file maintenance task with routine engineering risk."
+    detection_hints:
+      - "Likely touches two or more files or changes behavior that deserves normal review."
+      - "No sensitive security, persistence, or architecture boundary dominates the task."
+    phase_behavior:
+      intake: "Record success criteria, risk, profile rationale, and dependencies."
+      research: "normal; validate assumptions and produce a planning-ready handoff."
+      planning: "normal; create an explicit implementation plan and delegation shape."
+      coding: "auto; choose single-agent or multi-agent execution based on coupling."
+      qa: "normal; review against scope, risk, and research findings."
+    pr_required: true
+    model_policy:
+      default_risk: medium
+      tier_hint: standard
+
+  strict:
+    description: "Security, architecture, persistence, auth, crypto, secrets, or high-blast-radius change."
+    detection_hints:
+      - "Task mentions password, token, auth, crypto, secrets, permissions, or policy enforcement."
+      - "Changes touch `.mothership/hub/`, `mothership-config/`, persistence, serialization, install paths, or model routing."
+      - "Failure could lose data, weaken security, break orchestration, or affect multiple hosts."
+    phase_behavior:
+      intake: "Record strict rationale, sensitive boundaries, risk, dependencies, and QA obligations."
+      research: "deep; explicitly investigate risk, compatibility, and boundary behavior."
+      planning: "high_model; require detailed plan, rollback considerations, and security/persistence constraints."
+      coding: "with_security_constraints; keep ownership boundaries explicit and avoid shortcuts."
+      qa: "full_with_security_review; verify boundary behavior and run the strongest available checks."
+    pr_required: true
+    model_policy:
+      default_risk: high
+      tier_hint: high_first_pass
+
+profile_selection:
+  required_state: intake
+  default_profile: standard
+  hub_fields:
+    - profile
+    - profile_reason
+    - profile_selected_at
+    - profile_detection_hints
+  rules:
+    - "Commander must choose `quick`, `standard`, or `strict` during intake before leaving intake."
+    - "Commander must record the selected profile and rationale in hub state."
+    - "Profiles adjust phase ceremony; they do not remove canonical workflow states."
+    - "Quick may satisfy research with a recorded skip_or_minimal rationale and planning with a concise checklist."
+    - "QA is mandatory for every profile, including quick."
+    - "When hints conflict, choose the stricter profile."
+    - "Model tier routing must consider profile before risk and role defaults."
+
 states:
   intake:
     purpose: Capture the incoming request, initialize hub state, and clarify the problem before research begins.
@@ -17,6 +84,7 @@ states:
       - "Auxiliary skill preflight is recorded from `mothership-config/skill-dependencies.md`."
       - "`obra/brainstorming` is invoked to restate the task, assumptions, and success criteria."
       - Task summary is recorded in the hub.
+      - Execution profile (`quick`, `standard`, or `strict`) and profile rationale are recorded in the hub.
       - Initial risk assessment is recorded.
       - Success criteria and obvious dependencies are noted.
       - "Wiki index is read for project context if wiki is configured."
@@ -28,10 +96,11 @@ states:
       - waiting_for_human
       - blocked
     exit_criteria:
-      - "Research sub-agent is invoked using `agents/registry.yaml`."
-      - "Research sub-agent invokes `obra/brainstorming` in research mode."
-      - Research sub-agent output or blocker is recorded.
-      - Research findings are written to GitHub.
+      - "Research disposition is selected from the active profile; delegated research is invoked using `agents/registry.yaml` when the profile requires it."
+      - "When a research sub-agent is invoked, it uses `obra/brainstorming` in research mode."
+      - Research sub-agent output, minimal research note, or skip rationale is recorded.
+      - "Research depth follows the selected profile (`skip_or_minimal`, `normal`, or `deep`) and the profile-specific research disposition is recorded."
+      - Research findings are written to GitHub when required by the selected profile.
       - Open questions are identified.
       - "Research findings are structured with `obra/making-plans` into a planning-ready handoff."
       - Risks and constraints are summarized for planning.
@@ -45,7 +114,8 @@ states:
       - blocked
     exit_criteria:
       - "`obra/brainstorming` is invoked in interactive mode to present the design."
-      - "`obra/making-plans` is invoked and an explicit implementation plan is recorded."
+      - "Planning depth follows the selected profile (`concise`, `normal`, or `high_model`)."
+      - "`obra/making-plans` is invoked and an explicit implementation plan or profile-appropriate concise checklist is recorded."
       - Single-agent or multi-agent decision is recorded.
       - Implementation issues are created or updated.
       - Worktree allocation decision is recorded.
@@ -74,6 +144,7 @@ states:
     exit_criteria:
       - "QA sub-agent is invoked using `agents/registry.yaml`."
       - QA sub-agent output or blocker is recorded.
+      - "QA depth follows the selected profile (`light`, `normal`, or `full_with_security_review`), but QA is never skipped."
       - QA disposition is recorded.
       - Required changes or escalation reason is explicit.
       - "L1 items confirmed or challenged by QA are noted in `.draft/<task-id>/notes.md` if wiki is configured."
@@ -183,6 +254,8 @@ hub_contract:
     - entered
     - overlay
   recommended_fields:
+    - profile
+    - profile_reason
     - risk
     - gh
     - agents

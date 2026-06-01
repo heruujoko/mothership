@@ -115,6 +115,38 @@ Examples:
 
 That discipline is what makes the workflow useful in real repos over time.
 
+
+## Execution Profiles
+
+Mothership supports three execution profiles so daily work does not always need
+the same ceremony as high-risk engineering changes. The commander selects one
+profile during `intake`, records the choice and rationale in hub state, and then
+uses that profile to size research, planning, QA, PR expectations, and model
+routing.
+
+| Profile | Best for | Research | Planning | QA | PR | Model tier intent |
+| --- | --- | --- | --- | --- | --- | --- |
+| `quick` | Tiny fix, doc/content change, cosmetic update, or single-line config | Skip or minimal with a recorded rationale | Concise checklist | Light but mandatory | Optional | Low-to-medium |
+| `standard` | Normal feature, bugfix, or routine multi-file maintenance | Normal | Normal | Normal | Required | Standard role/risk tiers |
+| `strict` | Security, architecture, persistence, auth, crypto, secrets, hub/config, install, or model-routing changes | Deep | High-model detailed plan | Full review with security/boundary checks | Required | High first pass |
+
+Auto-detection hints favor safety:
+
+- one file, documentation-only, cosmetic, or low-blast-radius config changes usually indicate `quick`
+- three or more files or ordinary behavior changes usually indicate `standard`
+- sensitive terms such as password, token, auth, crypto, secret, permission, or policy indicate `strict`
+- changes touching `.mothership/hub/`, `mothership-config/`, persistence, serialization, installer behavior, or model routing indicate `strict`
+- when hints conflict, the commander chooses the stricter profile
+
+Profiles adjust ceremony; they do not delete workflow states. Even `quick` tasks
+still enter research, planning, coding, and QA. The difference is that quick
+research may be satisfied by a recorded `skip_or_minimal` rationale, planning may
+be a concise checklist, and QA remains a focused but explicit verification step.
+
+Model routing can also respect profiles through
+`mothership-config/model-policy.yaml` using `profile_overrides` before risk and
+role defaults.
+
 ## How Mothership Maintains Work
 
 Mothership is built around the idea that engineering work should remain

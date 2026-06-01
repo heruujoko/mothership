@@ -82,6 +82,7 @@ The [model-policy.yaml](mothership-config/model-policy.yaml) file controls:
 
 - **host aliases**: Map local host names to supported targets (`claude`, `codex`, `pi`, `hermes`)
 - **role tiers**: Assign model tiers per role (`commander`, `researcher`, `coder`, `qa`, `pr_monkey`)
+- **profile overrides**: Adjust tier selection based on execution profile (`quick`/`standard`/`strict`)
 - **risk overrides**: Adjust tier selection based on task risk (`low`/`medium`/`high`)
 - **host models**: Define available models per host and tier
 - **fallback behavior**: How to handle missing/invalid config
@@ -99,18 +100,36 @@ host_aliases:
   hermes: hermes
 
 # Role tiers - map each role to a model tier
-tiers:
+role_tiers:
   commander: high
   researcher: medium
   coder: medium
   qa: low
   pr_monkey: low
 
+# Profile overrides - adjust tier based on workflow ceremony
+profile_overrides:
+  quick:
+    researcher: low
+    coder: low
+    qa: low
+  standard: {}
+  strict:
+    commander: high
+    researcher: high
+    coder: high
+    qa: high
+
 # Risk overrides - adjust tier based on task risk
-risk:
-  low: low
-  medium: medium
-  high: high
+risk_overrides:
+  low:
+    coder: low
+    qa: low
+  medium: {}
+  high:
+    researcher: high
+    coder: high
+    qa: high
 
 # Host models - available models per host and tier
 host_models:
@@ -125,9 +144,12 @@ host_models:
 ```
 
 Model resolution order:
-1. Role tier + risk override from this file
-2. Host-specific model mapping in `agents/registry.yaml`
-3. Fallback: inherit from current session model
+1. Explicit invocation override, if provided
+2. Profile override from `profile_overrides`
+3. Risk override from `risk_overrides`
+4. Role tier from `role_tiers`
+5. Host-specific model mapping in `agents/registry.yaml`
+6. Fallback: inherit from current session model
 
 ### Verifying Configuration
 

@@ -91,6 +91,24 @@ else
   done
 fi
 
+
+# profile_overrides are optional for backward compatibility with existing
+# user policies. When present, validate the expected profile buckets.
+if match_line "^profile_overrides:" "${policy_file}"; then
+  profile_overrides_block="$(section_block profile_overrides || true)"
+  if [ -z "${profile_overrides_block}" ]; then
+    warn "profile_overrides block is present but empty"
+    valid=0
+  else
+    for profile in quick standard strict; do
+      if ! match_line "^  ${profile}:" <<< "${profile_overrides_block}"; then
+        warn "profile_overrides missing profile: ${profile}"
+        valid=0
+      fi
+    done
+  fi
+fi
+
 # risk_overrides (section-scoped)
 risk_overrides_block="$(section_block risk_overrides || true)"
 if [ -z "${risk_overrides_block}" ]; then
