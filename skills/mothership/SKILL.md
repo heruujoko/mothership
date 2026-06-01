@@ -26,7 +26,9 @@ Run this checklist immediately when `mothership` is invoked:
 6. If `mothership-config/model-policy.yaml` is missing, run `skills/model-policy-setup/scripts/setup-model-policy.sh` to bootstrap it. Inform the user they should edit the `host_models` section to match their available models.
 7. If preflight fails, record a `blocked` overlay or explicit fallback notes before continuing.
 8. If `.mothership/wiki.yaml` exists, read `projects/<name>/index.md` from the configured wiki root for project context.
-9. On pi: verify the `mothership_spawn` extension is available under `$PI_HOME/extensions/` (default `~/.agents/extensions/`). If absent, delegation will not work — record a `blocked` overlay and continue without sub-agent spawning.
+9. **If wiki is configured, apply the Retrieval Protocol**: extract task keywords, search project index for matching categories/tags, read up to 5 relevant wiki pages. Do not read the full wiki.
+10. **If wiki is configured, check freshness metadata** on each wiki page read. Flag pages older than 90 days as stale and record them in hub state under `wiki.stale_pages`.
+11. On pi: verify the `mothership_spawn` extension is available under `$PI_HOME/extensions/` (default `~/.agents/extensions/`). If absent, delegation will not work — record a `blocked` overlay and continue without sub-agent spawning.
 
 ## Pi Setup Prerequisites
 

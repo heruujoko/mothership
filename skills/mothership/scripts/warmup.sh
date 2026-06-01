@@ -205,6 +205,43 @@ fi
 missing_contract_count=$((missing_contract_count + agent_missing_count))
 # --- End agent contracts preflight ---
 
+# ==== Stale Wiki Check ====
+stale_page_count=0
+wiki_config="${repo_root}/.mothership/wiki.yaml"
+if [ -f "${wiki_config}" ]; then
+  wiki_root=$(grep -A2 'root:' "${wiki_config}" | grep 'root:' | awk '{print $2}' | tr -d '\r')
+  project_name=$(grep -A2 'project:' "${wiki_config}" | grep 'project:' | awk '{print $2}' | tr -d '\r')
+  if [ -n "${wiki_root}" ] && [ -n "${project_name}" ]; then
+    stale_threshold_days=$(grep -A2 'stale_threshold_days:' "${wiki_config}" | grep 'stale_threshold_days:' | awk '{print $2}' | tr -d '\r')
+    stale_threshold_days="${stale_threshold_days:-90}"
+    project_dir="${wiki_root}/projects/${project_name}"
+    archive_dir="${wiki_root}/archive"
+    mkdir -p "${archive_dir}"
+
+    # Check freshness in insight and decision pages
+    for page in "${project_dir}/insights/"*.md "${project_dir}/decisions/"*.md 2>/dev/null; do
+      [ -f "${page}" ] || continue
+      freshness=$(grep -E '^freshness:' "${page}" | head -1 | sed 's/^freshness:[[:space:]]*//' | tr -d '\r')
+      if [ -n "${freshness}" ]; then
+        freshness_epoch=$(date -d "${freshness}" +%s 2>/dev/null || echo 0)
+        now_epoch=$(date +%s)
+        days_old=$(( (now_epoch - freshness_epoch) / 86400 ))
+        if [ "${days_old}" -gt "${stale_threshold_days}" ] 2>/dev/null; then
+          stale_page_count=$((stale_page_count + 1))
+          rel_path="${page#${wiki_root}/}"
+          echo "[stale] ${rel_path} — last updated ${freshness} (${days_old} days ago)" >> "${report_file}"
+        fi
+      fi
+    done
+  fi
+fi
+
+{
+  echo "  stale_pages: ${stale_page_count}"
+  echo "  archive_dir: ${archive_dir:-not configured}"
+} >> "${report_file}"
+echo
+
 total_missing=$((missing_count + missing_contract_count))
 
 if [ "${total_missing}" -gt 0 ]; then
