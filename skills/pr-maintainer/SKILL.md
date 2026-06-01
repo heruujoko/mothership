@@ -17,7 +17,7 @@ This skill is for:
 - repeating until the PR is ready for merge
 
 This skill must operate through the `PR monkey` role contract in
-`agents/pr-monkey.md`.
+`agents/pr_monkey.md`.
 
 ## Tooling Rule
 

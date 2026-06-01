@@ -187,10 +187,9 @@ hub_contract:
     - gh
     - agents
     - wt
-    - refs
-  externalization:
+  phase_data:
     description: >
-      Verbose data (research findings, implementation details, QA dispositions)
-      must be written to refs/ files or GitHub artifacts. Only references
-      (paths or URLs) are stored in state.json. See .mothership/hub/README.md
-      for the full format specification.
+      All phase data (intake, research, planning, coding) is embedded directly
+      in state.yaml under the corresponding phase key. There are no external
+      refs/ files. See mothership-config/hub-contract.md for the full format
+      specification.

@@ -25,7 +25,7 @@ The research agent investigates a task before implementation so the commander ca
 
 ## Outputs
 
-Research findings should be written back to the GitHub research issue and may also be copied into `.mothership/hub/`.
+Research findings should be written back to the GitHub research issue, and may also be recorded in `.mothership/hub/state.yaml` under the `research:` section.
 
 Recommended output structure:
 - summary

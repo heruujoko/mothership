@@ -46,6 +46,18 @@ Delegated states map to roles as follows:
 
 `planning`, `complete`, and `cleanup` remain commander-owned states.
 
+## Model Resolution
+
+Before spawning a delegated role, resolve model selection with `mothership-config/model-policy.yaml`:
+
+1. explicit per-invocation override (if provided)
+2. `risk_overrides` (if task risk is known)
+3. `role_tiers` mapping for delegated role
+4. host tier default using `host_aliases` + `host_models`/`tiers`
+5. fallback: current thread model (legacy inheritance)
+
+If policy is missing or invalid, warn and continue with fallback instead of hard-failing.
+
 ## Prompt Assembly
 
 When spawning a sub-agent, construct the prompt from these parts in order:
@@ -152,27 +164,54 @@ For coder roles, assign clear file or module ownership in the prompt.
 
 ### Pi
 
-Pi has no built-in sub-agent spawning. Delegation requires the
-`mothership_spawn` extension tool to be loaded (installed under
-`~/.pi/agent/extensions/` alongside the mothership package).
+Pi delegation is team-first when the runtime exposes the `team` tool.
 
-Use `mothership_spawn` with the arguments declared in `agents/registry.yaml`
-under the `pi` host for each role:
+`mothership_spawn` reads `agents/registry.yaml` (`roles.<role>.pi`) and:
+
+1. Tries direct `team` tool invocation with mapped `team`, optional
+   `model_hint`, and optional `model_fallback_chain` when
+   `team_path_enabled: true` and the configured `team_tool` is available.
+   For safety, `team_tool` must be exactly `team` unless explicitly sanctioned
+   via `team_tool_allow_unsafe: true`.
+2. Falls back to legacy subprocess spawning (`pi --mode json`) when team-path
+   is disabled, unmapped, unavailable, or unhealthy.
+
+Fallback reasons are logged explicitly (for example:
+`team_path_disabled`, `team_mapping_missing`, `team_tool_unsafe`,
+`team_tool_unavailable`, `team_tool_unhealthy`).
+
+Legacy path arguments remain:
 
 - `role` — the mothership role to invoke (`researcher`, `coder`, `qa`, `pr_monkey`)
 - `task` — the task description or question for the sub-agent
 - `contract_file` — path to the role contract (`agents/<role>.md`)
 - `context` — any additional context to pass (issue, branch, files, etc.)
 
-The extension spawns a new `pi` subprocess for the delegated role and returns
-its output to commander. Commander waits for completion before transitioning.
+Commander waits for completion before transitioning.
 
 **Requirements:**
-- The `mothership_spawn` extension must be installed. See `skills/mothership/SKILL.md`
-  warmup checklist.
+- The `mothership_spawn` runtime extension files must be installed under
+  `$PI_HOME/extensions/` (default `~/.agents/extensions/`):
+  `subagent.ts` and `pi-routing.js`. See `skills/mothership/SKILL.md` warmup checklist.
+- The install target for Pi is `~/.agents` (not `~/.codex` or `~/.pi`) to avoid
+  conflicts with other agent hosts. Set the `PI_HOME` environment variable to
+  override.
+- **Required prerequisite:** `pi install npm:pi-crew`
+- **Required extension installs** (idempotent):
+  ```bash
+  pi-crew pi install npm:pi-powerline-footer
+  pi-crew pi install npm:@juicesharp/rpiv-todo
+  ```
 - The subprocess inherits the pi working directory. File paths in the context
   must be absolute or relative to the working directory.
-- The subprocess uses the same model unless overridden in the extension config.
+- Model should follow policy resolution first; if policy is missing/invalid, subprocess inherits the current thread model unless overridden in extension config.
+
+**Secure config guidance:**
+- Do not commit secrets or API keys to agent config files under `$PI_HOME/`.
+- Use user-scope configuration only. `$PI_HOME/` is user-local and should not
+  be shared across users or committed to version control.
+- If model fallback chains reference provider keys, store them in environment
+  variables or the provider's native credential store — never in YAML config.
 
 ## State Gates
 
@@ -181,17 +220,19 @@ Before leaving a delegated state, commander must have evidence that:
 - the delegated sub-agent was actually invoked for that state
 - the delegated sub-agent returned a result or blocker
 - the result was recorded to `refs/<state>.md` and GitHub, with only a
-  reference stored in `state.json`
+  reference stored inline in `state.yaml` under the relevant phase section
 
 This is especially strict for `qa`: commander cannot mark QA complete based on
 its own ad hoc verification after a coder returns.
 
-## Hub State Externalization
+## Hub State Embedding
 
-Sub-agent output must NOT be embedded inline in `state.json`. Instead:
+Sub-agent output is embedded directly in `state.yaml` under the phase key
+(e.g., `research:`, `coding:`). There are no separate ref files — the entire
+session state is one file.
 
-1. Write the full structured output to `refs/<state>.md` (e.g., `refs/research.md`, `refs/coding.md`, `refs/qa.md`)
-2. Create or update the corresponding GitHub artifact (issue comment, PR description)
-3. Store only the reference path or GitHub URL in `state.json.refs`
+1. Write the output inline to `state.yaml` under the appropriate phase section
+2. Reference important GitHub artifacts (issue comment, PR description) in the
+   phase section if needed for durability
 
-This keeps `state.json` compact (~200-300 tokens) regardless of sub-agent output size.
+This keeps the full session state in one read (~400-800 tokens).

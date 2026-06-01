@@ -1,4 +1,8 @@
 version: 1
+# IMPORTANT: Indentation must remain consistent. The Pi runtime extension
+# (subagent.ts) parses this file using section-scoped regex extraction, not a
+# full YAML parser. Do not reformat indentation levels, use block scalars,
+# or add YAML anchors/aliases without updating the parser.
 description: >
   Host-specific delegation registry for mothership roles. Role contracts remain
   in `agents/*.md`. This file tells a host runtime which sub-agent tool flavor
@@ -22,6 +26,9 @@ roles:
     pi:
       tool: mothership_spawn
       role: researcher
+      team_path_enabled: true
+      team_tool: team
+      team: research
 
   coder:
     delegated: true
@@ -36,6 +43,14 @@ roles:
     pi:
       tool: mothership_spawn
       role: coder
+      team_path_enabled: true
+      team_tool: team
+      team: implementation
+      # model_hint and model_fallback_chain are resolved from
+      # mothership-config/model-policy.yaml (role_tiers + host_models)
+      # at runtime. Override here only for explicit per-role overrides.
+      model_hint: ""
+      model_fallback_chain: ""
 
   qa:
     delegated: true
@@ -50,10 +65,13 @@ roles:
     pi:
       tool: mothership_spawn
       role: qa
+      team_path_enabled: true
+      team_tool: team
+      team: review
 
   pr_monkey:
     delegated: true
-    contract_file: agents/pr-monkey.md
+    contract_file: agents/pr_monkey.md
     claude:
       tool: Agent
       subagent_type: general-purpose
@@ -64,3 +82,6 @@ roles:
     pi:
       tool: mothership_spawn
       role: pr_monkey
+      team_path_enabled: true
+      team_tool: team
+      team: default

@@ -3,17 +3,77 @@
  *
  * Spawns a pi subprocess to perform a delegated role (researcher, coder, qa,
  * pr_monkey) using the role contract from agents/*.md.
+ *
+ * Contract & registry resolution order:
+ *   1. Explicit param (contract_file / registry_path)
+ *   2. Repo-local <cwd>/agents/<file>
+ *   3. User-scope  $PI_HOME/agents/<file>
  */
 
 import { spawn } from "node:child_process";
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 import type { Message } from "@mariozechner/pi-ai";
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { Text } from "@mariozechner/pi-tui";
 import { Type } from "typebox";
+import { buildTeamInvocation, decidePiRoute } from "./pi-routing.js";
 
 const VALID_ROLES = new Set(["researcher", "coder", "qa", "pr_monkey"]);
+
+/** Resolve PI_HOME: env var or default ~/.agents */
+function getPiHome(): string {
+	return process.env.PI_HOME || path.join(os.homedir(), ".agents");
+}
+
+/**
+ * Resolve a contract file path.
+ * Order: explicit param → repo-local → user-scope ($PI_HOME/agents/)
+ */
+function resolveContractFile(
+	role: string,
+	explicitPath: string | undefined,
+	cwd: string,
+): { path: string; source: "explicit" | "repo-local" | "user-scope"; triedPaths: string[] } {
+	const triedPaths: string[] = [];
+
+	// 1. Explicit param
+	if (explicitPath) {
+		triedPaths.push(explicitPath);
+		if (fs.existsSync(explicitPath)) {
+			return { path: explicitPath, source: "explicit", triedPaths };
+		}
+	}
+
+	// 2. Repo-local
+	const repoPath = path.join(cwd, "agents", `${role}.md`);
+	triedPaths.push(`repo-local: ${repoPath}`);
+	if (fs.existsSync(repoPath)) {
+		return { path: repoPath, source: "repo-local", triedPaths };
+	}
+
+	// 3. User-scope
+	const piHome = getPiHome();
+	const userPath = path.join(piHome, "agents", `${role}.md`);
+	triedPaths.push(`user-scope: ${userPath}`);
+	if (fs.existsSync(userPath)) {
+		return { path: userPath, source: "user-scope", triedPaths };
+	}
+
+	return { path: repoPath, source: "repo-local", triedPaths };
+}
+
+/**
+ * Resolve registry.yaml path.
+ * Order: repo-local → user-scope ($PI_HOME/agents/)
+ */
+function resolveRegistryPath(cwd: string): string {
+	const repoLocal = path.join(cwd, "agents", "registry.yaml");
+	if (fs.existsSync(repoLocal)) return repoLocal;
+	const piHome = getPiHome();
+	return path.join(piHome, "agents", "registry.yaml");
+}
 
 interface MothershipSpawnResult {
 	role: string;
@@ -41,6 +101,129 @@ function getFinalOutput(messages: Message[]): string {
 	return "";
 }
 
+/**
+ * Parse role config from registry.yaml using section-scoped extraction.
+ * First isolates the `roles:` block, then extracts the specific role entry
+ * within that block to avoid cross-section false positives.
+ * Also extracts the `contract_file` field for Design Gap 3 resolution.
+ */
+function parseRoleConfigFromRegistry(
+	registryPath: string,
+	role: string,
+): { pi: Record<string, any>; contract_file?: string } {
+	const result: { pi: Record<string, any>; contract_file?: string } = { pi: {} };
+
+	if (!fs.existsSync(registryPath)) return result;
+
+	const content = fs.readFileSync(registryPath, "utf8");
+
+	// Extract the `roles:` top-level section first, then search within it.
+	// This avoids matching role names that appear in other sections.
+	const rolesSection = extractYamlSection(content, "roles");
+	if (!rolesSection) return result;
+
+	// Within the roles section, find the specific role entry (indented 2 spaces).
+	const roleRegex = new RegExp(`\\n\\s{2}${role}:([\\s\\S]*?)(?=\\n\\s{2}[a-z_]\\w*:|$)`);
+	const roleMatch = rolesSection.match(roleRegex);
+	if (!roleMatch) return result;
+
+	const block = roleMatch[1];
+
+	// Extract contract_file if present (Design Gap 3)
+	const cfMatch = block.match(/\n\s{4}contract_file:\s*(.+)/);
+	if (cfMatch) {
+		result.contract_file = cfMatch[1].trim().replace(/^["']|["']$/g, "");
+	}
+
+	// Extract pi: block (4-space indented within the role)
+	const piMatch = block.match(/\n\s{4}pi:([\s\S]*?)(?=\n\s{4}[a-z_]\w*:|$)/);
+	if (!piMatch) return result;
+
+	const piBlock = piMatch[1];
+	const pi: Record<string, any> = {};
+	for (const rawLine of piBlock.split("\n")) {
+		const line = rawLine.trim();
+		if (!line || line.startsWith("#")) continue;
+		const idx = line.indexOf(":");
+		if (idx <= 0) continue;
+		const key = line.slice(0, idx).trim();
+		let value: any = line.slice(idx + 1).trim();
+		if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+			value = value.slice(1, -1);
+		}
+		if (value === "true") value = true;
+		else if (value === "false") value = false;
+		pi[key] = value;
+	}
+	result.pi = pi;
+	return result;
+}
+
+/**
+ * Extract a YAML top-level section by key (e.g., "roles", "host_models").
+ * Returns the content from the key line to the next top-level key or end-of-file.
+ * Lines where the key appears nested under other keys are ignored.
+ */
+function extractYamlSection(content: string, sectionKey: string): string | null {
+	// Match a top-level key (no leading whitespace) followed by ":"
+	// Capture everything until the next top-level key or end of string.
+	const regex = new RegExp(`^${sectionKey}:([\\s\\S]*?)(?=^[a-z_]\\w*:|\\z)`, "m");
+	const match = content.match(regex);
+	return match ? match[0] : null;
+}
+
+/**
+ * Extract a simple value from a YAML section (e.g., role_tiers.commander -> "high").
+ * Uses section-scoped extraction to avoid cross-section false positives.
+ */
+function extractYamlValue(content: string, sectionKey: string, key: string): string | null {
+	const section = extractYamlSection(content, sectionKey);
+	if (!section) return null;
+	const regex = new RegExp(`^\\s{2}${key}:\\s*(.+)$`, "m");
+	const match = section.match(regex);
+	if (!match) return null;
+	return match[1].trim().replace(/^["']|["']$/g, "");
+}
+
+/**
+ * Extract a nested value from a YAML section (e.g., host_models.pi.high -> "model-name").
+ */
+function extractNestedYamlValue(content: string, sectionKey: string, parentKey: string, childKey: string): string | null {
+	const section = extractYamlSection(content, sectionKey);
+	if (!section) return null;
+	const parentRegex = new RegExp(`^\\s{2}${parentKey}:([\\s\\S]*?)(?=^\\s{2}[a-z_]\\w*:|$)`, "m");
+	const parentMatch = section.match(parentRegex);
+	if (!parentMatch) return null;
+	const childRegex = new RegExp(`^\\s{4}${childKey}:\\s*(.+)$`, "m");
+	const childMatch = parentMatch[1].match(childRegex);
+	if (!childMatch) return null;
+	return childMatch[1].trim().replace(/^["']|["']$/g, "");
+}
+
+function getAvailableToolNames(ctx: any): string[] {
+	const names = new Set<string>();
+	const candidates = [ctx?.tools, ctx?.runtime?.tools, ctx?.availableTools];
+	for (const c of candidates) {
+		if (Array.isArray(c)) {
+			for (const t of c) {
+				if (typeof t === "string") names.add(t);
+				else if (t?.name) names.add(t.name);
+			}
+		} else if (c && typeof c === "object") {
+			for (const key of Object.keys(c)) {
+				// Only include keys whose value is callable (function) or is an
+				// object with callable shape — filters out prototype noise,
+				// string metadata keys, and non-tool object properties.
+				const val = c[key];
+				if (typeof val === "function" || (val && typeof val === "object")) {
+					names.add(key);
+				}
+			}
+		}
+	}
+	return [...names];
+}
+
 async function runPiSubprocess(
 	contractPath: string,
 	task: string,
@@ -54,8 +237,17 @@ async function runPiSubprocess(
 		usage: { inputTokens: 0, outputTokens: 0, costTotal: 0, turns: 0 },
 	};
 
+	// Bug 4 fix: Read contract file content and pass it inline
+	let contractContent: string;
+	try {
+		contractContent = fs.readFileSync(contractPath, "utf8");
+	} catch {
+		result.error = `Cannot read contract file: ${contractPath}`;
+		return result;
+	}
+
 	const args: string[] = ["--mode", "json", "-p", "--no-session"];
-	args.push("--append-system-prompt", contractPath);
+	args.push("--append-system-prompt", contractContent);
 	args.push(`Task: ${task}`);
 
 	let wasAborted = false;
@@ -133,7 +325,6 @@ async function runPiSubprocess(
 			};
 			if (signal.aborted) killProc();
 			else signal.addEventListener("abort", killProc, { once: true });
-			// Clear the SIGKILL timer if the process exits normally before it fires
 			proc.on("close", () => {
 				if (sigkillTimer !== undefined) clearTimeout(sigkillTimer);
 			});
@@ -170,7 +361,13 @@ export default function (pi: ExtensionAPI) {
 			contract_file: Type.Optional(
 				Type.String({
 					description:
-						"Path to the role contract file (agents/<role>.md). If not provided, derived from the role name.",
+						"Explicit path to the role contract file. If not provided, resolved from repo-local agents/<role>.md or user-scope $PI_HOME/agents/<role>.md.",
+				}),
+			),
+			registry_path: Type.Optional(
+				Type.String({
+					description:
+						"Explicit path to registry.yaml. If not provided, resolved from repo-local or user-scope agents/registry.yaml.",
 				}),
 			),
 			context: Type.Optional(
@@ -205,9 +402,23 @@ export default function (pi: ExtensionAPI) {
 				};
 			}
 
-			const contractFile =
-				params.contract_file ||
-				path.join(ctx.cwd, "agents", `${role}.md`);
+			// --- Bug 1 fix: Resolve contract file with user-scope fallback ---
+			const resolved = resolveContractFile(role, params.contract_file, cwd);
+			const contractFile = resolved.path;
+
+			if (!fs.existsSync(contractFile)) {
+				const triedList = resolved.triedPaths.join("\n  - ");
+				return {
+					content: [
+						{
+							type: "text",
+							text: `mothership_spawn failed: contract file not found for role "${role}".\n\nTried:\n  - ${triedList}\n\nEnsure the installer ran (\`./install.sh --target pi\`) and the contract file exists at one of those paths.`,
+						},
+					],
+					details: { role, error: "contract_not_found", tried_paths: resolved.triedPaths },
+					isError: true,
+				};
+			}
 
 			const contextNote = params.context
 				? `\n\n---\n\nAdditional context:\n${params.context}\n\n---\n\n`
@@ -215,22 +426,122 @@ export default function (pi: ExtensionAPI) {
 
 			const enrichedTask = `${contextNote}${task}`;
 
-			if (!fs.existsSync(contractFile)) {
-				return {
-					content: [
-						{
-							type: "text",
-							text: `mothership_spawn failed: contract file not found: ${contractFile}`,
-						},
-					],
-					details: { role, error: "contract_not_found" },
-					isError: true,
-				};
-			}
-
 			try {
+				// --- Design Gap 3 fix: Read contract_file from registry as source of truth ---
+				const registryPath = params.registry_path || resolveRegistryPath(cwd);
+				const roleConfig = parseRoleConfigFromRegistry(registryPath, role);
+
+				// If registry specifies a contract_file, prefer that as primary contract path
+				// (with same fallback logic). This solves Bug 2 (pr-monkey vs pr_monkey) since
+				// the registry can point to whatever filename exists.
+				// Note: contract_file paths are relative to the repo root, not the registry directory.
+				let effectiveContractFile = contractFile;
+				if (roleConfig.contract_file) {
+					const registryContractFile = path.isAbsolute(roleConfig.contract_file)
+						? roleConfig.contract_file
+						: path.resolve(cwd, roleConfig.contract_file);
+					if (fs.existsSync(registryContractFile)) {
+						effectiveContractFile = registryContractFile;
+					}
+				}
+
+				const route = decidePiRoute({ role, config: roleConfig, availableTools: getAvailableToolNames(ctx as any) });
+
+				// --- Model policy resolution: load model-policy.yaml when registry model_hint is empty ---
+				if (route.path === "team" && !route.modelHint) {
+					const policyPath = path.join(cwd, "mothership-config", "model-policy.yaml");
+					if (fs.existsSync(policyPath)) {
+						try {
+							const policyContent = fs.readFileSync(policyPath, "utf8");
+							const roleTier = extractYamlValue(policyContent, "role_tiers", role);
+							if (roleTier) {
+								const hostKey = "pi"; // This extension is Pi-only
+								const modelForTier = extractNestedYamlValue(policyContent, "host_models", hostKey, roleTier);
+								if (modelForTier) {
+									route.modelHint = modelForTier;
+								}
+							}
+						} catch (e) {
+							// Policy load failed — continue with empty model hint (legacy fallback)
+							console.warn(`[mothership_spawn] model-policy load failed: ${(e as Error).message}`);
+						}
+					}
+				}
+
+				// --- Bug 3 guard: Detect known pi-crew CLI flag issues ---
+				// The `--exclude-tools` flag is unsupported on some pi CLI versions.
+				// When team tool is potentially affected, log a clear diagnostic.
+				const knownUnsupportedFlags = ["--exclude-tools"];
+				let teamPathSafe = route.path === "team";
+				if (teamPathSafe) {
+					const callTool = (ctx as any)?.callTool || (ctx as any)?.executeTool || (pi as any)?.callTool;
+					if (typeof callTool !== "function") {
+						console.warn(
+							`[mothership_spawn] fallback=legacy reason=team_tool_unavailable tool=${route.teamTool} role=${role}`,
+						);
+						teamPathSafe = false;
+					}
+				}
+
+				if (teamPathSafe && route.path === "team") {
+					const payload = buildTeamInvocation({
+						teamName: route.teamName,
+						task: enrichedTask,
+						modelHint: route.modelHint,
+						modelFallbackChain: route.modelFallbackChain,
+					});
+					try {
+						const callTool =
+							(ctx as any)?.callTool || (ctx as any)?.executeTool || (pi as any)?.callTool;
+						const teamResult = await callTool(route.teamTool, payload, signal);
+						if (teamResult?.isError) {
+							const errText = Array.isArray(teamResult.content)
+								? teamResult.content.map((c: any) => c?.text || "").join(" ")
+								: "";
+							const isExcludeTools =
+								errText.includes("--exclude-tools") || errText.includes("Unknown option");
+							console.warn(
+								`[mothership_spawn] fallback=legacy reason=team_tool_unhealthy tool=${route.teamTool} role=${role}` +
+									(isExcludeTools
+										? ` (detected: pi-crew CLI flag issue — check pi/pi-crew compatibility for ${knownUnsupportedFlags})`
+										: ""),
+							);
+						} else {
+							const output = Array.isArray(teamResult?.content)
+								? teamResult.content.map((c: any) => c?.text || "").join("\n").trim()
+								: "";
+							return {
+								content: [{ type: "text", text: output || "(no output)" }],
+								details: {
+									role,
+									route: "team",
+									team: route.teamName,
+									team_tool: route.teamTool,
+									contract_source: resolved.source,
+									model_hint: route.modelHint,
+									model_fallback_chain: route.modelFallbackChain,
+								},
+							};
+						}
+					} catch (err: any) {
+						const errMsg = err?.message || "";
+						const isExcludeTools =
+							errMsg.includes("--exclude-tools") || errMsg.includes("Unknown option");
+						console.warn(
+							`[mothership_spawn] fallback=legacy reason=team_tool_unhealthy tool=${route.teamTool} role=${role}` +
+								(isExcludeTools
+									? ` (detected: pi-crew CLI flag issue — pi CLI may not support ${knownUnsupportedFlags}. Try updating pi or using --no-team-fallback.)`
+									: ""),
+						);
+					}
+				} else if (route.path !== "team") {
+					console.warn(
+						`[mothership_spawn] fallback=legacy reason=${route.reason} role=${role}`,
+					);
+				}
+
 				const result = await runPiSubprocess(
-					contractFile,
+					effectiveContractFile,
 					enrichedTask,
 					cwd,
 					signal,
@@ -245,14 +556,14 @@ export default function (pi: ExtensionAPI) {
 								text: `[${role}] ${result.error}${result.output ? `\n\nOutput:\n${result.output}` : ""}`,
 							},
 						],
-						details: { role, ...result.usage, error: result.error },
+						details: { role, ...result.usage, error: result.error, contract_source: resolved.source },
 						isError: true,
 					};
 				}
 
 				return {
 					content: [{ type: "text", text: result.output || "(no output)" }],
-					details: { role, ...result.usage },
+					details: { role, ...result.usage, contract_source: resolved.source },
 				};
 			} catch (err: any) {
 				return {

@@ -81,7 +81,13 @@ fi
 
 project_index="${project_dir}/index.md"
 if [ ! -f "${project_index}" ]; then
-  cat > "${project_index}" <<EOF
+  # Design Gap 2: Copy from wiki seed file if present
+  wiki_seed="${repo_root}/docs/mothership-wiki-seed.md"
+  if [ -f "${wiki_seed}" ]; then
+    cp "${wiki_seed}" "${project_index}"
+    echo "Initialized wiki from seed: ${wiki_seed}" >&2
+  else
+    cat > "${project_index}" <<EOF
 # ${project_name} Index
 
 ## Insights
@@ -90,6 +96,7 @@ _(no insights yet)_
 ## Decisions
 _(no decisions yet)_
 EOF
+  fi
 fi
 
 project_log="${project_dir}/log.md"

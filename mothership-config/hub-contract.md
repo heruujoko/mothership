@@ -1,7 +1,12 @@
-# Local Hub State
+# Hub Contract
 
-The local hub is the operational memory of mothership. It lives under `.mothership/hub/`
-and is gitignored (runtime agent context only).
+This file is the canonical, version-controlled copy of the hub contract.
+It is mirrored at `.mothership/hub/README.md` at runtime.
+
+**Do not edit `.mothership/hub/README.md` directly** — edit this file instead,
+and copy it to the runtime location during warmup.
+
+---
 
 ## Design
 

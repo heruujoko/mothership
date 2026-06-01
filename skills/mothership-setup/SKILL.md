@@ -13,11 +13,15 @@ description: Configure the mothership wiki for the current project. Run once per
 4. Writes preferences to `.mothership/wiki.yaml`
 5. Initializes `schema.md` from `mothership-config/wiki-schema-default.md` if not present
 6. Creates `index.md` and `log.md` for the project if not present
-7. Appends setup entry to project and global logs
+7. Bootstraps `mothership-config/model-policy.yaml` if missing (non-destructive)
+8. Informs user where to edit model configuration for their crews
+9. Appends setup entry to project and global logs
 
 ## Implementation
 
-Executes `../mothership/scripts/wiki-setup.sh` from the skill directory.
+1. Executes `../mothership/scripts/wiki-setup.sh` from the skill directory.
+2. Executes `../model-policy-setup/scripts/setup-model-policy.sh` to bootstrap model policy if missing.
+3. Prints guidance on editing `mothership-config/model-policy.yaml` for crew model selection.
 
 ## Preferences
 

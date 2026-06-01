@@ -168,7 +168,7 @@ The commander orchestrates. It does not implement, research, or review directly.
 - **Research phase:** Spawn a sub-agent to perform research. Pass the research issue context, require `obra/brainstorming` in research mode plus `obra/making-plans`, and include the agent file at `agents/researcher.md` as the role contract. Do not research yourself.
 - **Coding phase:** Spawn a sub-agent to implement. Pass the approved implementation plan, branch context, require `obra/executing-plans`, and include the agent file at `agents/coder.md` as the role contract. Do not implement yourself.
 - **QA phase:** Spawn a sub-agent to review. Pass the PR diff, research findings, and the agent file at `agents/qa.md` as the role contract. Do not review your own implementation.
-- **PR operations:** Spawn a sub-agent to handle PR creation, PR feedback triage, comment replies, and thread resolution. Pass PR context and the agent file at `agents/pr-monkey.md` as the role contract. Do not create or maintain PRs yourself when the task is explicitly PR-oriented.
+- **PR operations:** Spawn a sub-agent to handle PR creation, PR feedback triage, comment replies, and thread resolution. Pass PR context and the agent file at `agents/pr_monkey.md` as the role contract. Do not create or maintain PRs yourself when the task is explicitly PR-oriented.
 
 ### PR feedback discipline
 
@@ -203,9 +203,18 @@ When spawning a sub-agent for research, coding, or QA, commander must poll on a 
 - Each poll must report status to the user: still running, completed, or blocked.
 - Do not wait silently — the user should never have to remind commander to check on sub-agents.
 
-### Sub-Agent Model Inheritance
+### Sub-Agent Model Resolution
 
-Unless explicitly overridden, sub-agents spawned by commander inherit the current thread's model. Sub-agents differ by role and tooling constraints, not by model selection. Record this in documentation so users understand that delegation does not change model capability.
+Sub-agent model selection should resolve through `mothership-config/model-policy.yaml` when present and valid.
+
+Resolution order:
+1. Explicit invocation override (if provided)
+2. Risk override in `risk_overrides` (when a risk level is known)
+3. Role tier mapping in `role_tiers`
+4. Host tier default via `host_aliases` + `host_models`/`tiers`
+5. Fallback: inherit current thread model (legacy behavior)
+
+If `model-policy.yaml` is missing or invalid, warn and continue with legacy inheritance.
 
 ### Self-delegation is prohibited
 

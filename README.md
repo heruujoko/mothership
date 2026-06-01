@@ -226,6 +226,7 @@ This repository ships with:
 
 - the installable [`mothership` skill](skills/mothership/SKILL.md) as the manual entrypoint
 - the [`mothership:setup` skill](skills/mothership-setup/SKILL.md) for wiki configuration
+- the [`model-policy-setup` skill](skills/model-policy-setup/SKILL.md) to bootstrap `mothership-config/model-policy.yaml`
 - workflow support docs in `skills/` for intake, risk, parallelization, QA, worktrees, and escalation
 - bundled `obra` skills for brainstorming, plan making, plan execution, research, and debugging flows
 - focused git/GitHub skills for `commit`, `commit-push`, `create-pr`, and `pr-maintainer`
@@ -246,7 +247,7 @@ It requires a local `go` toolchain.
 
 The script asks two questions:
 
-1. install target: `codex`, `claude`, or `antigravity`
+1. install target: `codex`, `claude`, `antigravity`, `opencode`, or `pi`
 2. install mode: `symlink` or `copy`
 
 Installed package contents:
@@ -261,12 +262,54 @@ Target roots:
 - `codex` -> `${CODEX_HOME:-~/.codex}`
 - `claude` -> `~/.claude`
 - `antigravity` -> `~/.antigravity`
+- `opencode` -> `${OPENCODE_HOME:-~/.config/opencode}`
+- `pi` -> `${PI_HOME:-~/.agents}`
 
-Why the hub contract is copied instead of symlinked:
+### Pi Setup (with team-first routing)
 
-- `.mothership/` is used for local runtime artifacts.
-- copying `.mothership/hub/README.md` keeps the contract available without
-  writing runtime state back into this repository.
+Pi uses `~/.agents` as its install root (not `~/.pi`) to avoid conflicts with
+Codex. The `PI_HOME` environment variable overrides this.
+
+Prerequisites:
+
+```bash
+# 1. Install pi-crew (required for team-first routing)
+pi install npm:pi-crew
+
+# 2. Install required extensions (idempotent)
+pi-crew pi install npm:pi-powerline-footer
+pi-crew pi install npm:@juicesharp/rpiv-todo
+
+# 3. Run the mothership installer
+./install.sh --target pi --mode copy
+```
+
+The installer copies skills, agents, config, the hub contract, and Pi runtime
+extension files to `$PI_HOME/`. Verify:
+
+```bash
+ls $PI_HOME/extensions/subagent.ts
+ls $PI_HOME/extensions/pi-routing.js
+```
+
+**Verifying installation:** After installation, confirm the expected directory structure:
+
+```bash
+# Verify the target directory contains expected content
+ls -R $PI_HOME | grep -E '^(skills|agents|mothership-config)'
+
+# For Pi specifically, check that extensions are installed
+if [ -d "$PI_HOME/extensions" ]; then
+  ls $PI_HOME/extensions/*.ts $PI_HOME/extensions/*.js 2>/dev/null || echo "Extensions directory missing"
+fi
+```
+
+**Team-first delegation:** When Pi-crew is installed, mothership automatically
+uses the `team` tool for role delegation. This enables:
+- model routing via `mothership-config/model-policy.yaml` (role tiers + host models)
+- consistent runtime state across sessions
+- reduced subprocess overhead
+- fallback to legacy subprocess spawning if `team` is unavailable
 
 Non-interactive examples:
 
@@ -274,7 +317,74 @@ Non-interactive examples:
 ./install.sh --target claude --mode symlink
 ./install.sh --target codex --mode copy
 ./install.sh --target antigravity --mode symlink --force
+./install.sh --target pi --mode copy
 ```
+
+## Configuration
+
+After installation, configure model routing (required for Pi team-first routing):
+
+```bash
+# Initialize model-policy.yaml (if not auto-created by warmup)
+skills/model-policy-setup/scripts/setup-model-policy.sh
+
+# Edit the configuration
+vim mothership-config/model-policy.yaml
+```
+
+### Model Policy Configuration
+
+The [model-policy.yaml](mothership-config/model-policy.yaml) file controls:
+
+- **host aliases**: Map local host names to supported targets (`claude`, `codex`, `pi`, `hermes`)
+- **role tiers**: Assign model tiers per role (`commander`, `researcher`, `coder`, `qa`, `pr_monkey`)
+- **risk overrides**: Adjust tier selection based on task risk (`low`/`medium`/`high`)
+- **host models**: Define available models per host and tier
+- **fallback behavior**: How to handle missing/invalid config
+
+#### Example Configuration
+
+```yaml
+# mothership-config/model-policy.yaml
+
+# Host aliases - map local host names to supported targets
+host_aliases:
+  claude: claude
+  codex: codex
+  pi: pi
+  hermes: hermes
+
+# Role tiers - map each role to a model tier
+role_tiers:
+  commander: high
+  researcher: high
+  coder: medium
+  qa: medium
+  pr_monkey: low
+
+# Risk overrides - adjust tier based on task risk
+risk_overrides:
+  low: low
+  medium: medium
+  high: high
+
+# Host models - available models per host and tier
+host_models:
+  pi:
+    high: ["claude-3-5-sonnet-latest", "claude-3-5-haiku-latest"]
+    medium: ["claude-3-5-sonnet-latest", "claude-3-5-haiku-latest"]
+    low: ["claude-3-5-haiku-latest"]
+  codex:
+    high: ["claude-3-5-sonnet-latest"]
+    medium: ["claude-3-5-haiku-latest"]
+    low: ["claude-3-5-haiku-latest"]
+```
+
+Model resolution order:
+1. Role tier from `role_tiers` + risk override from `risk_overrides` in this file
+2. Host-specific model mapping in `host_models`
+3. Fallback: inherit current thread model (legacy behavior)
+3. Fallback: inherit from current session model
 
 ## Using It
 
@@ -285,9 +395,11 @@ High-level flow:
 
 1. Start with `mothership`.
 2. Run the intake warm-up from `skills/mothership/scripts/warmup.sh`.
+   - Warm-up warns (does not hard-fail) when `mothership-config/model-policy.yaml` is missing or invalid, and falls back to legacy model inheritance.
 3. Read the canonical config:
    - `mothership-config/workflow.yaml`
    - `mothership-config/roles.md`
+   - `mothership-config/model-policy.yaml`
    - `agents/registry.yaml`
    - `mothership-config/skill-dependencies.md`
    - `skills/mothership/subagent-protocol.md`
