@@ -6,7 +6,7 @@ description: Bootstrap mothership model policy config. Creates mothership-config
 # Model Policy Setup
 
 Initializes `mothership-config/model-policy.yaml` with defaults for:
-- host aliases (`claude`, `codex`, `pi`, `hermes`)
+- host aliases (`claude`, `codex`, `pi`, `hermes`, `ollama`)
 - role tiers (`commander`, `researcher`, `coder`, `qa`, `pr_monkey`)
 - risk overrides (`low` / `medium` / `high`)
 - host model mapping per tier (`high`, `medium`, `low`)

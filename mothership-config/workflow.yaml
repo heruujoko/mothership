@@ -128,9 +128,10 @@ overlays:
       - complete
       - cleanup
     required_fields:
-      - blocked_reason
-      - blocked_since
-      - next_unblock_action
+      - type
+      - reason
+      - since
+      - unblock
 
   reconstructed:
     purpose: >
@@ -146,9 +147,9 @@ overlays:
       - complete
       - cleanup
     required_fields:
-      - reconstructed_at
-      - reconstruction_source
-      - reconstruction_notes
+      - type
+      - source
+      - notes
 
 runtime_behavior:
   polling:
