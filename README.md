@@ -336,7 +336,7 @@ vim mothership-config/model-policy.yaml
 
 The [model-policy.yaml](mothership-config/model-policy.yaml) file controls:
 
-- **host aliases**: Map local host names to supported targets (`claude`, `codex`, `pi`, `hermes`)
+- **host aliases**: Map local host names to supported targets (`claude`, `codex`, `pi`, `hermes`, `ollama`)
 - **role tiers**: Assign model tiers per role (`commander`, `researcher`, `coder`, `qa`, `pr_monkey`)
 - **risk overrides**: Adjust tier selection based on task risk (`low`/`medium`/`high`)
 - **host models**: Define available models per host and tier
@@ -353,6 +353,7 @@ host_aliases:
   codex: codex
   pi: pi
   hermes: hermes
+  ollama: ollama
 
 # Role tiers - map each role to a model tier
 role_tiers:
@@ -364,9 +365,14 @@ role_tiers:
 
 # Risk overrides - adjust tier based on task risk
 risk_overrides:
-  low: low
-  medium: medium
-  high: high
+  low:
+    coder: low
+    qa: low
+  medium: {}
+  high:
+    researcher: high
+    coder: high
+    qa: high
 
 # Host models - available models per host and tier
 host_models:
@@ -383,7 +389,6 @@ host_models:
 Model resolution order:
 1. Role tier from `role_tiers` + risk override from `risk_overrides` in this file
 2. Host-specific model mapping in `host_models`
-3. Fallback: inherit current thread model (legacy behavior)
 3. Fallback: inherit from current session model
 
 ## Using It
