@@ -1,6 +1,6 @@
 # Mothership Local Agent Instructions
 
-This repository is an installable mothership package for Codex, Claude, and Pi agents and skills.
+This repository is an installable mothership package for Codex, Claude, Antigravity, OpenCode, and Pi agents and skills.
 
 ## Entrypoint
 
@@ -11,6 +11,8 @@ This repository is an installable mothership package for Codex, Claude, and Pi a
 
 - **Claude Code** — uses built-in `Agent` tool for delegation
 - **Codex** — uses built-in `spawn_agent` for delegation
+- **Antigravity** — uses built-in agent tooling for delegation
+- **OpenCode** — maps SKILL.md files as OpenCode commands during install
 - **Pi** — uses `mothership_spawn` extension tool with team-first delegation (requires `skills/mothership/extensions/subagent.ts` and `skills/mothership/extensions/pi-routing.js` installed under `~/.agents/extensions/`).
 
 The Pi extension supports two delegation paths:
@@ -80,7 +82,7 @@ vim mothership-config/model-policy.yaml
 
 The [model-policy.yaml](mothership-config/model-policy.yaml) file controls:
 
-- **host aliases**: Map local host names to supported targets (`claude`, `codex`, `pi`, `hermes`)
+- **host aliases**: Map local host names to supported targets (`claude`, `codex`, `pi`, `hermes`, `ollama`)
 - **role tiers**: Assign model tiers per role (`commander`, `researcher`, `coder`, `qa`, `pr_monkey`)
 - **risk overrides**: Adjust tier selection based on task risk (`low`/`medium`/`high`)
 - **host models**: Define available models per host and tier
@@ -99,18 +101,23 @@ host_aliases:
   hermes: hermes
 
 # Role tiers - map each role to a model tier
-tiers:
+role_tiers:
   commander: high
-  researcher: medium
+  researcher: high
   coder: medium
-  qa: low
+  qa: medium
   pr_monkey: low
 
 # Risk overrides - adjust tier based on task risk
-risk:
-  low: low
-  medium: medium
-  high: high
+risk_overrides:
+  low:
+    coder: low
+    qa: low
+  medium: {}
+  high:
+    researcher: high
+    coder: high
+    qa: high
 
 # Host models - available models per host and tier
 host_models:
@@ -125,8 +132,8 @@ host_models:
 ```
 
 Model resolution order:
-1. Role tier + risk override from this file
-2. Host-specific model mapping in `agents/registry.yaml`
+1. Role tier from `role_tiers` + risk override from `risk_overrides` in this file
+2. Host-specific model mapping in `host_models`
 3. Fallback: inherit from current session model
 
 ### Verifying Configuration

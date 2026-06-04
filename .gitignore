@@ -1,13 +1,5 @@
 .DS_Store
 .artifacts/
-.mothership/*
-!.mothership/hub/
-.mothership/hub/*
-!.mothership/hub/README.md
-
-.claude/
-
-.mothership/
 
 # Windows NTFS alternate data stream metadata
 *:Zone.Identifier
