@@ -219,8 +219,8 @@ Before leaving a delegated state, commander must have evidence that:
 
 - the delegated sub-agent was actually invoked for that state
 - the delegated sub-agent returned a result or blocker
-- the result was recorded to `refs/<state>.md` and GitHub, with only a
-  reference stored inline in `state.yaml` under the relevant phase section
+- the result was recorded to `state.yaml` under the relevant phase section
+  and GitHub artifacts, for durability across sessions
 
 This is especially strict for `qa`: commander cannot mark QA complete based on
 its own ad hoc verification after a coder returns.

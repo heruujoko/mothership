@@ -364,9 +364,14 @@ role_tiers:
 
 # Risk overrides - adjust tier based on task risk
 risk_overrides:
-  low: low
-  medium: medium
-  high: high
+  low:
+    coder: low
+    qa: low
+  medium: {}
+  high:
+    researcher: high
+    coder: high
+    qa: high
 
 # Host models - available models per host and tier
 host_models:
