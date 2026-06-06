@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(pwd)"
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 runtime_dir="${repo_root}/.mothership"
 preflight_dir="${runtime_dir}/preflight"
 hub_dir="${runtime_dir}/hub"
@@ -16,7 +16,7 @@ model_policy_validator="${repo_root}/skills/mothership/scripts/validate-model-po
 
 PI_HOME="${PI_HOME:-${HOME}/.agents}"
 
-mkdir -p "${runtime_dir}" "${preflight_dir}" "${runtime_dir}/sessions"
+mkdir -p "${runtime_dir}" "${preflight_dir}" "${runtime_dir}/sessions" "${hub_dir}"
 
 if [ ! -f "${gitignore_file}" ]; then
   touch "${gitignore_file}"

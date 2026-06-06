@@ -160,10 +160,11 @@ def replace_stale_pages_in_wiki_block(block_lines: List[str], stale_paths: List[
 
 
 def update_hub_state(state_path: pathlib.Path, stale_paths: List[str]) -> None:
-    if not state_path.exists():
-        return
+    state_path.parent.mkdir(parents=True, exist_ok=True)
 
-    lines = state_path.read_text(encoding="utf-8").splitlines()
+    lines = []
+    if state_path.exists():
+        lines = state_path.read_text(encoding="utf-8").splitlines()
     wiki_start = None
     wiki_end = len(lines)
     for i, line in enumerate(lines):
@@ -214,7 +215,7 @@ def format_kb_stale(scan) -> str:
             "",
             "To archive stale pages:",
             f"  mkdir -p \"{scan['archive_dir']}\"",
-            f"  mv \"<page-path>\" \"{scan['archive_dir']}/\"",
+            f"  mv \"{scan['root']}/<page-path>\" \"{scan['archive_dir']}/\"",
             "  # Then update projects/<project>/index.md",
         ]
     )

@@ -145,7 +145,7 @@ Before promoting an L1 item to L2, the commander:
 
 A script `skills/mothership/scripts/kb-stale.sh` implements the stale page scanner:
 
-1. Parses `.mothership/wiki.yaml` via `python3` YAML (safe, handles comments/varied indentation).
+1. Parses `.mothership/wiki.yaml` via the bundled dependency-free helper (safe simple YAML subset; no `eval`, PyYAML, or GNU-only shell features).
 2. Scans all pages under `projects/<name>/insights/` and `projects/<name>/decisions/`.
 3. Reads the `freshness` field from each page's metadata header.
 4. Lists pages where freshness is older than `stale_threshold_days` (default: 90).
@@ -157,7 +157,7 @@ A script `skills/mothership/scripts/kb-stale.sh` implements the stale page scann
 bash skills/mothership/scripts/kb-stale.sh
 ```
 
-The same logic also runs automatically during `intake` as part of `warmup.sh`.
+The same logic also runs automatically during `intake` as part of `warmup.sh`, which writes stale page paths to top-level hub state under `wiki.stale_pages`.
 
 ### Archival (not deletion)
 

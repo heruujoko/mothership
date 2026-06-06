@@ -30,6 +30,7 @@ wiki_root_yaml="$(yaml_escape "${wiki_root}")"
 project_name_yaml="$(yaml_escape "${project_name}")"
 
 project_dir="${wiki_root}/projects/${project_name}"
+today="$(date +%Y-%m-%d)"
 
 mkdir -p "${project_dir}/.draft" "${project_dir}/insights" "${project_dir}/decisions"
 
@@ -115,14 +116,18 @@ if [ ! -f "${project_index}" ]; then
   # Design Gap 2: Copy from wiki seed file if present
   wiki_seed="${repo_root}/docs/mothership-wiki-seed.md"
   if [ -f "${wiki_seed}" ]; then
-    cp "${wiki_seed}" "${project_index}"
+    while IFS= read -r line || [ -n "${line}" ]; do
+      line="${line//__PROJECT_NAME__/${project_name}}"
+      line="${line//__TODAY__/${today}}"
+      printf '%s\n' "${line}"
+    done < "${wiki_seed}" > "${project_index}"
     echo "Initialized wiki from seed: ${wiki_seed}" >&2
   else
     cat > "${project_index}" <<EOF
 ---
 sources: []
 confidence: draft
-freshness: $(date +%Y-%m-%d)
+freshness: ${today}
 tags: [project-index]
 ---
 
