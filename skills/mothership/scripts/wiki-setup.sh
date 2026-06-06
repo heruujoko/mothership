@@ -13,7 +13,21 @@ echo
 
 read -rp "Wiki root [${wiki_root_default}]: " wiki_root
 wiki_root="${wiki_root:-${wiki_root_default}}"
-wiki_root="$(eval echo "${wiki_root}")"
+case "${wiki_root}" in
+  "~")
+    wiki_root="${HOME}"
+    ;;
+  "~/"*)
+    wiki_root="${HOME}/${wiki_root#~/}"
+    ;;
+esac
+
+yaml_escape() {
+  printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
+}
+
+wiki_root_yaml="$(yaml_escape "${wiki_root}")"
+project_name_yaml="$(yaml_escape "${project_name}")"
 
 project_dir="${wiki_root}/projects/${project_name}"
 
@@ -22,8 +36,8 @@ mkdir -p "${project_dir}/.draft" "${project_dir}/insights" "${project_dir}/decis
 mkdir -p "$(dirname "${pref_file}")"
 cat > "${pref_file}" <<EOF
 wiki:
-  root: ${wiki_root}
-  project: ${project_name}
+  root: "${wiki_root_yaml}"
+  project: "${project_name_yaml}"
   auto_ingest: true
   draft_ttl: 2
 EOF
@@ -105,6 +119,13 @@ if [ ! -f "${project_index}" ]; then
     echo "Initialized wiki from seed: ${wiki_seed}" >&2
   else
     cat > "${project_index}" <<EOF
+---
+sources: []
+confidence: draft
+freshness: $(date +%Y-%m-%d)
+tags: [project-index]
+---
+
 # ${project_name} Index
 
 ## Insights

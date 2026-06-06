@@ -205,65 +205,20 @@ fi
 missing_contract_count=$((missing_contract_count + agent_missing_count))
 # --- End agent contracts preflight ---
 
-# ==== Stale Wiki Check (YAML-safe) ====
-stale_page_count=0
+# ==== Stale Wiki Check (portable) ====
 wiki_config="${repo_root}/.mothership/wiki.yaml"
+wiki_hygiene_helper="${repo_root}/skills/mothership/scripts/wiki-hygiene.py"
 if [ -f "${wiki_config}" ]; then
-  # Use python3 yaml parser for robustness — handles comments, multi-line, varied indentation
-  wiki_meta=$(python3 -c "
-import yaml, sys
-try:
-    with open('${wiki_config}') as f:
-        cfg = yaml.safe_load(f)
-    w = cfg.get('wiki', {})
-    root = w.get('root', '')
-    project = w.get('project', '')
-    stale_days = w.get('stale_threshold_days', 90)
-    archive_days = w.get('archive_after_days', 120)
-    print(f'root={root}')
-    print(f'project={project}')
-    print(f'stale_days={stale_days}')
-    print(f'archive_days={archive_days}')
-except Exception as e:
-    print(f'error={e}', file=sys.stderr)
-    sys.exit(1)
-" 2>/dev/null) || wiki_meta=""
-
-  if [ -n "${wiki_meta}" ]; then
-    eval "${wiki_meta}" 2>/dev/null || true
-    if [ -n "${root}" ] && [ -n "${project}" ]; then
-      project_dir="${root}/projects/${project}"
-      archive_dir="${root}/archive"
-      stale_threshold_days="${stale_days:-90}"
-      mkdir -p "${archive_dir}"
-
-      # Check freshness in insight and decision pages
-      shopt -s nullglob
-      insight_pages=("${project_dir}/insights/"*.md)
-      decision_pages=("${project_dir}/decisions/"*.md)
-      shopt -u nullglob
-      for page in "${insight_pages[@]}" "${decision_pages[@]}"; do
-        [ -f "${page}" ] || continue
-        freshness=$(grep -E '^freshness:' "${page}" | head -1 | sed 's/^freshness:[[:space:]]*//' | tr -d '\r')
-        if [ -n "${freshness}" ]; then
-          freshness_epoch=$(date -d "${freshness}" +%s 2>/dev/null || echo 0)
-          now_epoch=$(date +%s)
-          days_old=$(( (now_epoch - freshness_epoch) / 86400 ))
-          if [ "${days_old}" -gt "${stale_threshold_days}" ] 2>/dev/null; then
-            stale_page_count=$((stale_page_count + 1))
-            rel_path="${page#${root}/}"
-            echo "[stale] ${rel_path} — last updated ${freshness} (${days_old} days ago)" >> "${report_file}"
-          fi
-        fi
-      done
-    fi
-  fi
+  python3 "${wiki_hygiene_helper}" warmup \
+    --config "${wiki_config}" \
+    --report-file "${report_file}" \
+    --hub-state "${hub_dir}/state.yaml"
+else
+  {
+    echo "  stale_pages: 0"
+    echo "  archive_dir: not configured"
+  } >> "${report_file}"
 fi
-
-{
-  echo "  stale_pages: ${stale_page_count}"
-  echo "  archive_dir: ${archive_dir:-not configured}"
-} >> "${report_file}"
 echo
 
 total_missing=$((missing_count + missing_contract_count))

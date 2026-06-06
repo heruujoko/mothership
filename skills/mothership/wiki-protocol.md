@@ -120,7 +120,7 @@ When wiki is configured, the commander checks page freshness during `intake`:
 
 1. Read `freshness` field from each page's metadata header.
 2. Compare against current date. If older than `stale_threshold` (default: 90 days), flag as stale.
-3. Record stale pages in hub state under `wiki.stale_pages`.
+3. Record stale page paths in top-level hub state under `wiki.stale_pages`.
 4. Do not block work on stale pages — flag them for later cleanup.
 
 **Configuration** (add to `.mothership/wiki.yaml`):

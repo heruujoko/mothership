@@ -1,3 +1,10 @@
+---
+sources: []
+confidence: draft
+freshness: 2026-06-06
+tags: [project-index, seed]
+---
+
 # Mothership Wiki Seed
 
 This file provides an initial knowledge base for the mothership wiki when the

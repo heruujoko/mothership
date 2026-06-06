@@ -84,6 +84,13 @@ alternatives_considered:
 ## Index Format
 
 ```markdown
+---
+sources: []
+confidence: draft
+freshness: YYYY-MM-DD
+tags: [project-index]
+---
+
 # <Project> Index
 
 ## Insights

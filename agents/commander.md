@@ -253,7 +253,7 @@ The commander must not act as researcher, coder, or QA in the same context where
 - Read `projects/<name>/index.md` for project context if wiki is configured.
 - **Apply Retrieval Protocol:** Extract task keywords, search `index.md` for matching categories/tags, read up to 5 relevant wiki pages (not the full wiki).
 - **Check Freshness:** Read `freshness` metadata from wiki pages. Flag pages older than `stale_threshold_days` (default: 90) as stale.
-- **Record Stale Pages:** Save stale page references in hub state under `wiki.stale_pages`.
+- **Record Stale Pages:** Save stale page paths in top-level hub state under `wiki.stale_pages`.
 - Run lightweight lint: check for stale drafts, broken index references.
 
 ### At Complete
