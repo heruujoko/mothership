@@ -1,6 +1,6 @@
 # Mothership Local Agent Instructions
 
-This repository is an installable mothership package for Codex, Claude, and Pi agents and skills.
+This repository is an installable mothership package for Codex, Claude, Pi, Antigravity, and OpenCode agents and skills.
 
 ## Entrypoint
 
@@ -80,7 +80,7 @@ vim mothership-config/model-policy.yaml
 
 The [model-policy.yaml](mothership-config/model-policy.yaml) file controls:
 
-- **host aliases**: Map local host names to supported targets (`claude`, `codex`, `pi`, `hermes`)
+- **host aliases**: Map local host names to supported targets (`claude`, `codex`, `pi`, `hermes`, `ollama`)
 - **role tiers**: Assign model tiers per role (`commander`, `researcher`, `coder`, `qa`, `pr_monkey`)
 - **risk overrides**: Adjust tier selection based on task risk (`low`/`medium`/`high`)
 - **host models**: Define available models per host and tier
@@ -99,35 +99,64 @@ host_aliases:
   hermes: hermes
 
 # Role tiers - map each role to a model tier
-tiers:
+role_tiers:
   commander: high
-  researcher: medium
+  researcher: high
   coder: medium
-  qa: low
+  qa: medium
   pr_monkey: low
 
 # Risk overrides - adjust tier based on task risk
-risk:
-  low: low
-  medium: medium
-  high: high
+risk_overrides:
+  low:
+    coder: low
+    qa: low
+  medium: {}
+  high:
+    researcher: high
+    coder: high
+    qa: high
 
 # Host models - available models per host and tier
 host_models:
-  pi:
-    high: ["claude-3-5-sonnet-latest", "claude-3-5-haiku-latest"]
-    medium: ["claude-3-5-sonnet-latest", "claude-3-5-haiku-latest"]
-    low: ["claude-3-5-haiku-latest"]
+  claude:
+    high: "claude-opus-4"
+    medium: "claude-sonnet-4"
+    low: "claude-haiku-3.5"
   codex:
-    high: ["claude-3-5-sonnet-latest"]
-    medium: ["claude-3-5-haiku-latest"]
-    low: ["claude-3-5-haiku-latest"]
-```
+    high: "codex/gpt-5.5"
+    medium: "codex/gpt-5.3-codex"
+    low: "codex/gpt-5-mini"
+  pi:
+    high: "openai-codex/gpt-5.5"
+    medium: "openai-codex/gpt-5.3-codex"
+    low: "openai-codex/gpt-5-mini"
+  hermes:
+    high: ""
+    medium: ""
+    low: ""
+  ollama:
+    high: "codex/gpt-5.5"
+    medium: "ollama/deepseek-v4-flash"
+    low: "ollama/kimi-k2.6"
+
+tiers:
+  high:
+    description: "Highest reasoning tier for orchestration and complex implementation."
+    default_model: high
+  medium:
+    description: "Balanced tier for structured execution and reviews."
+    default_model: medium
+  low:
+    description: "Lightweight tier for routine or narrow tasks."
+    default_model: low
 
 Model resolution order:
-1. Role tier + risk override from this file
-2. Host-specific model mapping in `agents/registry.yaml`
-3. Fallback: inherit from current session model
+1. explicit_override
+2. risk_override
+3. role_tier
+4. host_tier_default
+5. inherit_current_thread_model
 
 ### Verifying Configuration
 
