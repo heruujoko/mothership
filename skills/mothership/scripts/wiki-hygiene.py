@@ -14,6 +14,19 @@ def strip_quotes(value: str) -> str:
     return value
 
 
+def yaml_safe_string(value: str) -> str:
+    """Return value in YAML-safe quoted form if it contains characters that could corrupt YAML structure."""
+    if not value:
+        return '""'
+    if any(ch in value for ch in (":", "#", "[", "]", "{", "}", "!", "&", "*", "?", "|", ">", '"', "'", "%", "@", "`")):
+        escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+        return f'"{escaped}"'
+    if value[0] in {"-", " ", "\t", "~"}:
+        escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+        return f'"{escaped}"'
+    return value
+
+
 def strip_inline_comment(value: str) -> str:
     in_single = False
     in_double = False
@@ -153,7 +166,7 @@ def replace_stale_pages_in_wiki_block(block_lines: List[str], stale_paths: List[
         result.append("")
     if stale_paths:
         result.append("  stale_pages:")
-        result.extend(f"    - {path}" for path in stale_paths)
+        result.extend(f"    - {yaml_safe_string(path)}" for path in stale_paths)
     else:
         result.append("  stale_pages: []")
     return result

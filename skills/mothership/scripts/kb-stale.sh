@@ -3,7 +3,12 @@
 # Usage: bash skills/mothership/scripts/kb-stale.sh
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+# Allow override for installed-package scenario; fall back to script-relative path
+if [ -n "${MOTHERSHIP_PROJECT_ROOT:-}" ]; then
+  repo_root="${MOTHERSHIP_PROJECT_ROOT}"
+else
+  repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+fi
 wiki_config="${repo_root}/.mothership/wiki.yaml"
 helper="${repo_root}/skills/mothership/scripts/wiki-hygiene.py"
 

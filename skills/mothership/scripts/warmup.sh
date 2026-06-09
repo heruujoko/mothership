@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+# Allow override for installed-package scenario; fall back to script-relative path
+if [ -n "${MOTHERSHIP_PROJECT_ROOT:-}" ]; then
+  repo_root="${MOTHERSHIP_PROJECT_ROOT}"
+else
+  repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+fi
 runtime_dir="${repo_root}/.mothership"
 preflight_dir="${runtime_dir}/preflight"
 hub_dir="${runtime_dir}/hub"
@@ -205,14 +210,31 @@ fi
 missing_contract_count=$((missing_contract_count + agent_missing_count))
 # --- End agent contracts preflight ---
 
+# ==== Mirrors ====
+# Copy hub contract to runtime location (keeps gitignored copy in sync)
+contract_file="${repo_root}/mothership-config/hub-contract.md"
+if [ -f "${contract_file}" ]; then
+  cp "${contract_file}" "${hub_dir}/README.md"
+fi
+
 # ==== Stale Wiki Check (portable) ====
 wiki_config="${repo_root}/.mothership/wiki.yaml"
 wiki_hygiene_helper="${repo_root}/skills/mothership/scripts/wiki-hygiene.py"
 if [ -f "${wiki_config}" ]; then
+  set +e
   python3 "${wiki_hygiene_helper}" warmup \
     --config "${wiki_config}" \
     --report-file "${report_file}" \
     --hub-state "${hub_dir}/state.yaml"
+  wiki_status=$?
+  set -e
+  if [ "${wiki_status}" -ne 0 ]; then
+    {
+      echo "  stale_pages: 0"
+      echo "  archive_dir: not configured"
+      echo "  wiki_error: true"
+    } >> "${report_file}"
+  fi
 else
   {
     echo "  stale_pages: 0"
