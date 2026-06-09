@@ -13,17 +13,32 @@ echo
 
 read -rp "Wiki root [${wiki_root_default}]: " wiki_root
 wiki_root="${wiki_root:-${wiki_root_default}}"
-wiki_root="$(eval echo "${wiki_root}")"
+case "${wiki_root}" in
+  "~")
+    wiki_root="${HOME}"
+    ;;
+  "~/"*)
+    wiki_root="${HOME}/${wiki_root#~/}"
+    ;;
+esac
+
+yaml_escape() {
+  printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
+}
+
+wiki_root_yaml="$(yaml_escape "${wiki_root}")"
+project_name_yaml="$(yaml_escape "${project_name}")"
 
 project_dir="${wiki_root}/projects/${project_name}"
+today="$(date +%Y-%m-%d)"
 
 mkdir -p "${project_dir}/.draft" "${project_dir}/insights" "${project_dir}/decisions"
 
 mkdir -p "$(dirname "${pref_file}")"
 cat > "${pref_file}" <<EOF
 wiki:
-  root: ${wiki_root}
-  project: ${project_name}
+  root: "${wiki_root_yaml}"
+  project: "${project_name_yaml}"
   auto_ingest: true
   draft_ttl: 2
 EOF
@@ -46,6 +61,23 @@ This file defines conventions for reading and writing the mothership wiki.
 - Every L2 claim must cite a source: `> Source: PR #N (url)`
 - Use `[[wikilinks]]` for cross-references between pages
 - Append to existing pages, do not create new files for existing topics
+- Every wiki page MUST include a YAML metadata header with:
+  - sources (issue/PR/commit URLs)
+  - confidence (draft|observed|inferred|verified|deprecated)
+  - freshness (date last verified)
+  - tags (categorical keywords)
+
+## Metadata Template
+
+Every new wiki page should be prepended with:
+```
+---
+sources: []
+confidence: draft
+freshness: $(date +%Y-%m-%d)
+tags: []
+---
+```
 
 ## L1 to L2 Promotion Rules
 
@@ -84,10 +116,21 @@ if [ ! -f "${project_index}" ]; then
   # Design Gap 2: Copy from wiki seed file if present
   wiki_seed="${repo_root}/docs/mothership-wiki-seed.md"
   if [ -f "${wiki_seed}" ]; then
-    cp "${wiki_seed}" "${project_index}"
+    while IFS= read -r line || [ -n "${line}" ]; do
+      line="${line//__PROJECT_NAME__/${project_name}}"
+      line="${line//__TODAY__/${today}}"
+      printf '%s\n' "${line}"
+    done < "${wiki_seed}" > "${project_index}"
     echo "Initialized wiki from seed: ${wiki_seed}" >&2
   else
     cat > "${project_index}" <<EOF
+---
+sources: []
+confidence: draft
+freshness: ${today}
+tags: [project-index]
+---
+
 # ${project_name} Index
 
 ## Insights

@@ -1,16 +1,11 @@
-# Mothership Wiki Seed
-
-This file provides an initial knowledge base for the mothership wiki when the
-project is cloned fresh. The `wiki-setup.sh` script copies this content into
-the wiki index if no existing index is found.
-
-> This file is tracked in git. To update the seed, edit this file and commit.
-> The seed is copied once per working copy (when `index.md` doesn't exist yet).
-> After that, the wiki is maintained by agent runtime and is **not** overwritten.
-
+---
+sources: []
+confidence: draft
+freshness: __TODAY__
+tags: [project-index]
 ---
 
-# Project Index
+# __PROJECT_NAME__ Index
 
 _Edit this section to describe your project's key entities, routes, and patterns._
 

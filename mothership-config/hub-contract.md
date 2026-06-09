@@ -38,6 +38,8 @@ agents:
   coder: active
 wt: main
 summary: Short task description
+wiki:
+  stale_pages: []
 
 # --- phase data (inlined per transition) ---
 intake:
@@ -86,6 +88,7 @@ coding:
 | `agents` | object | Role → status/agent_type map |
 | `wt` | string | Current branch/worktree name |
 | `summary` | string | One-line task summary |
+| `wiki` | object | Top-level wiki runtime data such as `stale_pages` |
 | `intake` | object | Success criteria, warmup, risk notes |
 | `research` | object | Findings, constraints, recommendations |
 | `planning` | object | Execution shape, scope, rationale |
