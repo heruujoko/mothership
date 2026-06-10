@@ -177,7 +177,7 @@ func install(cfg config) error {
 	}
 
 	if cfg.Target == "pi" {
-		extensions := []string{"subagent.ts", "pi-routing.js"}
+		extensions := []string{"subagent.ts"}
 		for _, name := range extensions {
 			extSrc := filepath.Join(cfg.RepoRoot, "skills", "mothership", "extensions", name)
 			extDst := filepath.Join(targetRoot, "extensions", name)

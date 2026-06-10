@@ -164,23 +164,13 @@ For coder roles, assign clear file or module ownership in the prompt.
 
 ### Pi
 
-Pi delegation is team-first when the runtime exposes the `team` tool.
+Pi delegation uses `mothership_spawn` with subprocess spawning (`pi --mode json`).
 
-`mothership_spawn` reads `agents/registry.yaml` (`roles.<role>.pi`) and:
+`mothership_spawn` reads `agents/registry.yaml` (`roles.<role>.pi`) and resolves
+the contract file path, then spawns a pi subprocess with the role contract as a
+system prompt.
 
-1. Tries direct `team` tool invocation with mapped `team`, optional
-   `model_hint`, and optional `model_fallback_chain` when
-   `team_path_enabled: true` and the configured `team_tool` is available.
-   For safety, `team_tool` must be exactly `team` unless explicitly sanctioned
-   via `team_tool_allow_unsafe: true`.
-2. Falls back to legacy subprocess spawning (`pi --mode json`) when team-path
-   is disabled, unmapped, unavailable, or unhealthy.
-
-Fallback reasons are logged explicitly (for example:
-`team_path_disabled`, `team_mapping_missing`, `team_tool_unsafe`,
-`team_tool_unavailable`, `team_tool_unhealthy`).
-
-Legacy path arguments remain:
+Arguments:
 
 - `role` — the mothership role to invoke (`researcher`, `coder`, `qa`, `pr_monkey`)
 - `task` — the task description or question for the sub-agent
@@ -190,18 +180,12 @@ Legacy path arguments remain:
 Commander waits for completion before transitioning.
 
 **Requirements:**
-- The `mothership_spawn` runtime extension files must be installed under
-  `$PI_HOME/extensions/` (default `~/.agents/extensions/`):
-  `subagent.ts` and `pi-routing.js`. See `skills/mothership/SKILL.md` warmup checklist.
+- The `mothership_spawn` runtime extension file must be installed under
+  `$PI_HOME/extensions/` (default `~/.agents/extensions/`): `subagent.ts`.
+  See `skills/mothership/SKILL.md` warmup checklist.
 - The install target for Pi is `~/.agents` (not `~/.codex` or `~/.pi`) to avoid
   conflicts with other agent hosts. Set the `PI_HOME` environment variable to
   override.
-- **Required prerequisite:** `pi install npm:pi-crew`
-- **Required extension installs** (idempotent):
-  ```bash
-  pi-crew pi install npm:pi-powerline-footer
-  pi-crew pi install npm:@juicesharp/rpiv-todo
-  ```
 - The subprocess inherits the pi working directory. File paths in the context
   must be absolute or relative to the working directory.
 - Model should follow policy resolution first; if policy is missing/invalid, subprocess inherits the current thread model unless overridden in extension config.
@@ -210,8 +194,13 @@ Commander waits for completion before transitioning.
 - Do not commit secrets or API keys to agent config files under `$PI_HOME/`.
 - Use user-scope configuration only. `$PI_HOME/` is user-local and should not
   be shared across users or committed to version control.
-- If model fallback chains reference provider keys, store them in environment
-  variables or the provider's native credential store — never in YAML config.
+
+**Installer:**
+- The `.deb` package automatically installs `subagent.ts` to the correct path.
+- For tarball installs, run the `mothership/install.py` helper from the repo root:
+  ```bash
+  python3 skills/mothership/scripts/install.py --target pi
+  ```
 
 ## State Gates
 
