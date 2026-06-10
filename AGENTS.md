@@ -11,13 +11,11 @@ This repository is an installable mothership package for Codex, Claude, and Pi a
 
 - **Claude Code** — uses built-in `Agent` tool for delegation
 - **Codex** — uses built-in `spawn_agent` for delegation
-- **Pi** — uses `mothership_spawn` extension tool with team-first delegation (requires `skills/mothership/extensions/subagent.ts` and `skills/mothership/extensions/pi-routing.js` installed under `~/.agents/extensions/`).
+- **Pi** — uses `mothership_spawn` extension tool with subprocess-based delegation (requires `skills/mothership/extensions/subagent.ts` installed under `~/.agents/extensions/`).
 
-The Pi extension supports two delegation paths:
+The Pi extension uses a single delegation path:
 
-1. **Team path (preferred)**: When Pi-crew is installed, uses the `team` tool with model routing via `mothership-config/model-policy.yaml`. This enables consistent runtime state, reduced subprocess overhead, and model tier routing based on role requirements.
-
-2. **Legacy path (fallback)**: Falls back to subprocess spawning when `team` is unavailable, with explicit logging of the reason.
+1. **Subprocess path**: Spawns a `pi --mode json` subprocess with the role contract as system prompt. Contract files are resolved from `agents/registry.yaml` with repo-local and user-scope fallback. Model routing follows `mothership-config/model-policy.yaml` if configured.
 
 Install with `./install.sh --target <host>`. See `agents/registry.yaml` for per-host role mappings.
 
@@ -66,7 +64,7 @@ Install with `./install.sh --target <host>`. See `agents/registry.yaml` for per-
 
 ## Configuration
 
-After installation, configure model routing for Pi (required for team-first routing):
+After installation, configure model routing for Pi:
 
 ```bash
 # Initialize model-policy.yaml (if not auto-created by warmup)

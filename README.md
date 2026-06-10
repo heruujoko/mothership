@@ -265,7 +265,7 @@ Target roots:
 - `opencode` -> `${OPENCODE_HOME:-~/.config/opencode}`
 - `pi` -> `${PI_HOME:-~/.agents}`
 
-### Pi Setup (with team-first routing)
+### Pi Setup (subprocess-based delegation)
 
 Pi uses `~/.agents` as its install root (not `~/.pi`) to avoid conflicts with
 Codex. The `PI_HOME` environment variable overrides this.
@@ -273,23 +273,15 @@ Codex. The `PI_HOME` environment variable overrides this.
 Prerequisites:
 
 ```bash
-# 1. Install pi-crew (required for team-first routing)
-pi install npm:pi-crew
-
-# 2. Install required extensions (idempotent)
-pi-crew pi install npm:pi-powerline-footer
-pi-crew pi install npm:@juicesharp/rpiv-todo
-
-# 3. Run the mothership installer
+# Run the mothership installer
 ./install.sh --target pi --mode copy
 ```
 
-The installer copies skills, agents, config, the hub contract, and Pi runtime
-extension files to `$PI_HOME/`. Verify:
+The installer copies skills, agents, config, the hub contract, and the
+`mothership_spawn` extension file to `$PI_HOME/`. Verify:
 
 ```bash
 ls $PI_HOME/extensions/subagent.ts
-ls $PI_HOME/extensions/pi-routing.js
 ```
 
 **Verifying installation:** After installation, confirm the expected directory structure:
@@ -298,18 +290,18 @@ ls $PI_HOME/extensions/pi-routing.js
 # Verify the target directory contains expected content
 ls -R $PI_HOME | grep -E '^(skills|agents|mothership-config)'
 
-# For Pi specifically, check that extensions are installed
+# For Pi specifically, check that extension is installed
 if [ -d "$PI_HOME/extensions" ]; then
-  ls $PI_HOME/extensions/*.ts $PI_HOME/extensions/*.js 2>/dev/null || echo "Extensions directory missing"
+  ls $PI_HOME/extensions/*.ts 2>/dev/null || echo "Extension file missing"
 fi
 ```
 
-**Team-first delegation:** When Pi-crew is installed, mothership automatically
-uses the `team` tool for role delegation. This enables:
-- model routing via `mothership-config/model-policy.yaml` (role tiers + host models)
-- consistent runtime state across sessions
-- reduced subprocess overhead
-- fallback to legacy subprocess spawning if `team` is unavailable
+**Subprocess-based delegation:** Mothership on Pi uses `mothership_spawn` which
+spawns a `pi --mode json` subprocess with the role contract as system prompt.
+This is a self-contained delegation path with no external package dependencies:
+- contract file is resolved from `agents/registry.yaml` (repo-local or user-scope)
+- model selection follows `mothership-config/model-policy.yaml` (role tiers + host models)
+- no pi-crew installation required
 
 Non-interactive examples:
 
@@ -322,7 +314,7 @@ Non-interactive examples:
 
 ## Configuration
 
-After installation, configure model routing (required for Pi team-first routing):
+After installation, configure model routing:
 
 ```bash
 # Initialize model-policy.yaml (if not auto-created by warmup)
