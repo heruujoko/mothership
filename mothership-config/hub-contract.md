@@ -30,6 +30,11 @@ state: coding
 prev: planning
 entered: 2026-05-16T14:32:00Z
 overlay: null
+profile: standard
+profile_reason: Normal multi-file bugfix with routine risk
+profile_selected_at: 2026-05-16T14:30:00Z
+profile_detection_hints:
+  - Multi-file behavior change
 risk: medium
 gh:
   issue: "#42"
@@ -83,6 +88,10 @@ coding:
 
 | Key | Type | Description |
 |-----|------|-------------|
+| `profile` | enum | `quick`, `standard`, or `strict`; selected during intake |
+| `profile_reason` | string | Why the profile was selected |
+| `profile_selected_at` | string | ISO timestamp when profile was selected |
+| `profile_detection_hints` | list | Decisive hints used to classify the task |
 | `risk` | enum | `low`, `medium`, `high`, `critical` |
 | `gh` | object | GitHub references: `issue`, `pr` |
 | `agents` | object | Role → status/agent_type map |

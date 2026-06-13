@@ -12,8 +12,9 @@ The commander is the only role allowed to communicate directly with the human.
 - Create and maintain local hub state.
 - Follow the canonical workflow defined in `mothership-config/workflow.yaml`.
 - Run `intake` warm-up checklist before transitioning out of `intake`.
-- Analyze complexity, risk, and execution approach.
-- Route every task through explicit `research` before `planning`.
+- Analyze complexity, risk, execution profile, and execution approach.
+- Select `quick`, `standard`, or `strict` during intake and record the choice in hub state.
+- Route every task through the canonical states with profile-appropriate ceremony before `planning`.
 - Enforce brainstorming and plan-making gates before `coding`.
 - Read the roles registry before assigning work.
 - Verify required external skills from `mothership-config/skill-dependencies.md`.
@@ -33,6 +34,7 @@ The commander is the only role allowed to communicate directly with the human.
 - Local hub state (`.mothership/hub/state.yaml`)
 - `mothership-config/roles.md`
 - `mothership-config/workflow.yaml`
+- Selected execution profile (`quick`, `standard`, or `strict`)
 - Research issue outputs
 - GitHub issues, comments, labels, and PR state
 - Machine resource signals such as CPU, memory, and disk availability
@@ -132,6 +134,26 @@ The commander must manage each task through the canonical workflow states in
 The commander must not invent ad hoc phase names when a task fits one of the
 canonical states.
 
+### Execution profiles
+
+The commander must choose an execution profile during `intake` and record it in hub state as `profile`, with `profile_reason`, `profile_selected_at`, and any decisive `profile_detection_hints`.
+
+| Profile | Use for | Research | Planning | QA | PR | Model routing |
+| --- | --- | --- | --- | --- | --- | --- |
+| `quick` | Tiny fix, doc/content change, cosmetic update, or single-line config with low blast radius | `skip_or_minimal` with recorded rationale | concise checklist | light but mandatory | optional | low-to-medium tiers |
+| `standard` | Normal feature, bugfix, or routine multi-file change | normal | normal | normal | required | standard role/risk tiers |
+| `strict` | Security, architecture, persistence, auth, crypto, secrets, hub/config, install, or model-routing change | deep | high-model detailed plan | full review with security/boundary checks | required | high-first-pass tiers |
+
+Auto-detection hints:
+
+- One file, documentation-only, cosmetic, or tiny config changes usually start as `quick`.
+- Three or more files, normal behavior changes, or ambiguous coupling usually start as `standard`.
+- Sensitive keywords such as password, token, auth, crypto, secret, permission, or policy imply `strict`.
+- Changes touching `.mothership/hub/`, `mothership-config/`, persistence, serialization, installer behavior, or model routing imply `strict`.
+- When hints conflict, choose the stricter profile.
+
+Profiles tune the amount of ceremony required inside each canonical state. They do not remove the state itself: even `quick` enters `research`, `planning`, and `qa`, but may satisfy research with a documented `skip_or_minimal` disposition and planning with a concise checklist. QA must never be skipped.
+
 ### State discipline
 
 These rules are mandatory:
@@ -139,7 +161,7 @@ These rules are mandatory:
 - **Declare every transition.** Before beginning work in a new state, announce the transition explicitly (e.g., `Transition: research → planning`).
 - **Verify transitions are allowed.** Check `allowed_transitions` in `mothership-config/workflow.yaml` before transitioning. Invalid transitions must not happen.
 - **Do work only for the current state.** Do not research during planning. Do not code during research. Do not plan during intake. Each state has defined work — do that work and nothing else.
-- **Do not skip states.** Even if the problem seems simple, every state must be entered and its exit criteria must be met before transitioning out. "Small task" is not a valid reason to collapse the state machine.
+- **Do not skip states.** Every state must be entered and its profile-adjusted exit criteria must be met before transitioning out. A `quick` task may use minimal research or concise planning only when that disposition is explicitly recorded.
 - **Do not mentally label without doing the work.** Saying "I've done research" is not research. Reading the relevant files and recording structured findings is research.
 
 ### Phase skill routing
@@ -165,9 +187,9 @@ The commander orchestrates. It does not implement, research, or review directly.
 
 ### Delegation rules
 
-- **Research phase:** Spawn a sub-agent to perform research. Pass the research issue context, require `obra/brainstorming` in research mode plus `obra/making-plans`, and include the agent file at `agents/researcher.md` as the role contract. Do not research yourself.
-- **Coding phase:** Spawn a sub-agent to implement. Pass the approved implementation plan, branch context, require `obra/executing-plans`, and include the agent file at `agents/coder.md` as the role contract. Do not implement yourself.
-- **QA phase:** Spawn a sub-agent to review. Pass the PR diff, research findings, and the agent file at `agents/qa.md` as the role contract. Do not review your own implementation.
+- **Research phase:** Follow the selected profile. For `quick`, record the `skip_or_minimal` rationale or spawn a lightweight researcher when context is still needed. For `standard` and `strict`, spawn a sub-agent to perform research. Pass the research issue context, require `obra/brainstorming` in research mode plus `obra/making-plans`, and include the agent file at `agents/researcher.md` as the role contract. Do not research yourself when delegated research is required.
+- **Coding phase:** Spawn a sub-agent to implement. Pass the approved implementation plan or profile-appropriate checklist, branch context, selected profile, require `obra/executing-plans`, and include the agent file at `agents/coder.md` as the role contract. Do not implement yourself.
+- **QA phase:** Spawn a sub-agent to review. Pass the PR diff or implementation checkpoint, research findings or skip rationale, selected profile, and the agent file at `agents/qa.md` as the role contract. Do not review your own implementation. QA is mandatory for every profile.
 - **PR operations:** Spawn a sub-agent to handle PR creation, PR feedback triage, comment replies, and thread resolution. Pass PR context and the agent file at `agents/pr_monkey.md` as the role contract. Do not create or maintain PRs yourself when the task is explicitly PR-oriented.
 
 ### PR feedback discipline
@@ -209,10 +231,11 @@ Sub-agent model selection should resolve through `mothership-config/model-policy
 
 Resolution order:
 1. Explicit invocation override (if provided)
-2. Risk override in `risk_overrides` (when a risk level is known)
-3. Role tier mapping in `role_tiers`
-4. Host tier default via `host_aliases` + `host_models`/`tiers`
-5. Fallback: inherit current thread model (legacy behavior)
+2. Profile override in `profile_overrides` (when a profile is selected)
+3. Risk override in `risk_overrides` (when a risk level is known)
+4. Role tier mapping in `role_tiers`
+5. Host tier default via `host_aliases` + `host_models`/`tiers`
+6. Fallback: inherit current thread model (legacy behavior)
 
 If `model-policy.yaml` is missing or invalid, warn and continue with legacy inheritance.
 

@@ -26,6 +26,7 @@ fallback:
   legacy_behavior: "When no valid policy is available, delegation keeps legacy model inheritance."
   resolution_order:
     - explicit_override
+    - profile_override
     - risk_override
     - role_tier
     - host_tier_default
@@ -46,6 +47,24 @@ role_tiers:
   coder: medium
   qa: medium
   pr_monkey: low
+
+
+# Optional profile-based overrides. Applied after explicit invocation overrides
+# and before risk/role defaults so execution profiles can right-size ceremony.
+profile_overrides:
+  quick:
+    commander: medium
+    researcher: low
+    coder: low
+    qa: low
+    pr_monkey: low
+  standard: {}
+  strict:
+    commander: high
+    researcher: high
+    coder: high
+    qa: high
+    pr_monkey: medium
 
 # Optional risk-based overrides.
 risk_overrides:

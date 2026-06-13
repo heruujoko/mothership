@@ -22,9 +22,30 @@ Help commander turn an incoming human request into an actionable execution plan.
 
 - task summary
 - decomposition recommendation
+- selected execution profile (`quick`, `standard`, or `strict`) and rationale
 - initial risk level
 - research-needed flag
 - possible implementation issue breakdown
+
+## Execution Profile Classification
+
+During intake, classify the task into exactly one profile and record the chosen profile plus rationale in hub state.
+
+| Profile | Use when | Intake output requirements |
+| --- | --- | --- |
+| `quick` | Tiny fix, doc/content-only edit, cosmetic update, or single-line config with low blast radius | Record why minimal research and concise planning are sufficient; still require light QA. |
+| `standard` | Normal feature, bugfix, or routine multi-file change | Record normal research/planning expectations and QA scope. |
+| `strict` | Security, architecture, persistence, auth, crypto, secrets, hub/config, installer, or model-routing change | Record sensitive boundaries, deep research needs, high-model planning, and full QA/security review obligations. |
+
+Auto-detection hints:
+
+- One file or purely cosmetic/content changes usually indicate `quick`.
+- Three or more files, behavior changes, or unclear coupling usually indicate `standard`.
+- Keywords such as password, token, auth, crypto, secret, permission, or policy indicate `strict`.
+- Touching `.mothership/hub/`, `mothership-config/`, persistence, serialization, install paths, or model routing indicates `strict`.
+- If hints disagree, choose the stricter profile.
+
+The profile controls ceremony, not state existence: every task still reaches QA, and `quick` only lightens research/planning when the skip/minimal rationale is recorded.
 
 ## Boundary Definition
 

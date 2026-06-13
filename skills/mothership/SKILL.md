@@ -23,7 +23,7 @@ Run this checklist immediately when `mothership` is invoked:
 3. Ensure `.mothership/` is present in `.gitignore`.
 4. Ensure required auxiliary skills are available per `mothership-config/skill-dependencies.md`.
 5. Ensure `agents/registry.yaml` and `skills/mothership/subagent-protocol.md` are available.
-6. If `mothership-config/model-policy.yaml` is missing, run `skills/model-policy-setup/scripts/setup-model-policy.sh` to bootstrap it. Inform the user they should edit the `host_models` section to match their available models.
+6. If `mothership-config/model-policy.yaml` is missing, run `skills/model-policy-setup/scripts/setup-model-policy.sh` to bootstrap it. Inform the user they should edit the `host_models` and optional `profile_overrides` sections to match their available models and desired profile routing.
 7. If preflight fails, record a `blocked` overlay or explicit fallback notes before continuing.
 8. If `.mothership/wiki.yaml` exists, read `projects/<name>/index.md` from the configured wiki root for project context.
 9. **If wiki is configured, apply the Retrieval Protocol**: extract task keywords, search project index for matching categories/tags, read up to 5 relevant wiki pages. Do not read the full wiki.
@@ -98,6 +98,19 @@ role_tiers:
   qa: medium
   pr_monkey: low
 
+# Profile-based overrides (applied before risk/role defaults)
+profile_overrides:
+  quick:
+    researcher: low
+    coder: low
+    qa: low
+  standard: {}
+  strict:
+    commander: high
+    researcher: high
+    coder: high
+    qa: high
+
 # Risk-based overrides (applied before role_tiers)
 risk_overrides:
   low:
@@ -111,10 +124,11 @@ risk_overrides:
 Key sections:
 - **`host_models.<host>`** — map tier names to actual model IDs your provider supports
 - **`role_tiers`** — change which tier a role uses by default
+- **`profile_overrides`** — upgrade or downgrade role tiers for `quick`, `standard`, or `strict` profiles
 - **`risk_overrides`** — upgrade or downgrade based on task risk assessment
 - **`fallback`** — what happens when policy is missing or invalid (default: warn + inherit current thread model)
 
-Resolution order: explicit_override → risk_override → role_tier → host_tier_default → inherit_current_thread_model
+Resolution order: explicit_override → profile_override → risk_override → role_tier → host_tier_default → inherit_current_thread_model
 
 After editing, validate:
 ```bash
@@ -160,10 +174,11 @@ After warmup completes:
 
 1. Declare the current workflow state. The initial state is always `intake`.
 2. Record the task summary in the hub.
-3. Use `obra/brainstorming` during `intake` before any delegation.
-4. Follow the state machine from `mothership-config/workflow.yaml` — do not skip ahead.
-5. If wiki is configured, L1 staging writes happen automatically during research, planning, coding, and QA states.
-6. L2 promotion happens automatically at `complete`.
+3. Select an execution profile (`quick`, `standard`, or `strict`) during `intake` and record `profile`, `profile_reason`, `profile_selected_at`, and decisive detection hints in the hub.
+4. Use `obra/brainstorming` during `intake` before any delegation.
+5. Follow the state machine from `mothership-config/workflow.yaml` with profile-appropriate ceremony — do not skip states.
+6. If wiki is configured, L1 staging writes happen automatically during research, planning, coding, and QA states.
+7. L2 promotion happens automatically at `complete`.
 
 The agent must be in a state at all times. Between states there is no undefined "just working" mode.
 
@@ -171,12 +186,23 @@ The agent must be in a state at all times. Between states there is no undefined 
 
 - Commander remains the sole human-facing role.
 - Use the canonical workflow states from `mothership-config/workflow.yaml`.
+- Use execution profiles from `workflow.yaml` to right-size ceremony without removing states.
 - Treat `blocked` and `reconstructed` as overlays rather than standalone phases.
 - Persist important checkpoints to GitHub as well as local hub state.
 
 ## Workflow Discipline
 
 These rules are mandatory, not advisory.
+
+### Execution profiles must be selected during intake
+
+Classify every task as exactly one profile:
+
+- `quick`: tiny fix, doc/content-only change, cosmetic update, or single-line config. Research may be `skip_or_minimal`, planning may be concise, QA is light but mandatory, and PRs are optional.
+- `standard`: normal feature or bugfix. Use normal research, planning, QA, and PR expectations.
+- `strict`: security, architecture, persistence, auth, crypto, secrets, hub/config, install, or model-routing work. Use deep research, high-model planning, full QA/security review, and PRs.
+
+Record `profile`, `profile_reason`, `profile_selected_at`, and decisive `profile_detection_hints` in hub state before leaving `intake`. If hints conflict, choose the stricter profile.
 
 ### State transitions must be explicit
 
@@ -216,7 +242,7 @@ Mothership is an orchestration system. After reading the task and completing int
 5. Spawn a sub-agent to review.
 6. Close the loop.
 
-Do not skip from "I understand the task" to "here is the solution." The state machine exists precisely to prevent this pattern.
+Do not skip from "I understand the task" to "here is the solution." The state machine exists precisely to prevent this pattern. Execution profiles only adjust depth: a `quick` task can record minimal research and a concise plan, but it still reaches QA.
 
 ### Use sub-agents, not role-play
 
